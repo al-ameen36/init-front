@@ -20,6 +20,11 @@
 		"enabled": true,
 		"indentStyle": "tab"
 	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
 	"assist": { "actions": { "source": { "organizeImports": "on" } } },
 	"linter": {
 		"enabled": true,
