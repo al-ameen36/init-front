@@ -14,8 +14,8 @@ import {
 	ResponsiveContainer,
 	Tooltip,
 } from "recharts";
+import { SkillBar } from "../../../components/SkillBar";
 import { ACTIVITY, SKILL_RADAR, USER } from "../data";
-import { SkillBar } from "./SkillBar";
 import { Topbar } from "./Topbar";
 
 export function SkillsView() {

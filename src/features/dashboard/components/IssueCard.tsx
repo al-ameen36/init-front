@@ -1,8 +1,8 @@
 import { BookmarkIcon, Clock, MessageSquare, Star } from "lucide-react";
 import { motion } from "motion/react";
+import { DifficultyBadge } from "../../../components/DifficultyBadge";
+import { MatchRing } from "../../../components/MatchRing";
 import type { Issue } from "../types";
-import { DifficultyBadge } from "./DifficultyBadge";
-import { MatchRing } from "./MatchRing";
 
 export function IssueCard({
 	issue,

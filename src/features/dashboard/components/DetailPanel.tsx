@@ -11,8 +11,8 @@ import {
 	Zap,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { MatchRing } from "../../../components/MatchRing";
 import type { Issue } from "../types";
-import { MatchRing } from "./MatchRing";
 
 export function DetailPanel({
 	issue,
