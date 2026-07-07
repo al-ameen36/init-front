@@ -23,7 +23,7 @@ export function Nav() {
 					: "1px solid transparent",
 			}}
 		>
-			<div className="flex items-center gap-2">
+			<div className="flex items-center gap-2 w-54">
 				<div className="flex justify-center items-center bg-primary rounded-md w-7 h-7">
 					<Terminal size={13} className="text-white" />
 				</div>

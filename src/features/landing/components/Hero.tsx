@@ -14,9 +14,9 @@ export function Hero() {
 	const navigate = useNavigate();
 
 	const lines = [
-		{ text: "Analyzing 34 repositories…", done: true },
+		{ text: "Analyzing 14 repositories…", done: true },
 		{ text: "Detected TypeScript · React · Next.js", done: true },
-		{ text: "Scanning 12,840 open issues…", done: tick >= 1 },
+		{ text: "Scanning 240 open issues…", done: tick >= 1 },
 		{ text: "Matching against capability profile…", done: tick >= 2 },
 		{ text: "Found 4 high-probability contributions", done: tick >= 3 },
 	];
@@ -29,7 +29,7 @@ export function Hero() {
 	}, []);
 
 	return (
-		<section className="relative flex flex-col justify-center items-center px-6 pt-24 pb-16 min-h-screen overflow-hidden">
+		<section className="relative flex flex-col justify-center items-center px-6 pt-40 pb-16 min-h-screen overflow-hidden">
 			<div
 				className="absolute inset-0 opacity-[0.03]"
 				style={{
@@ -38,7 +38,7 @@ export function Hero() {
 				}}
 			/>
 			<div
-				className="top-1/3 left-1/2 absolute opacity-20 blur-[120px] rounded-full w-[600px] h-[400px] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+				className="top-1/3 left-1/2 absolute opacity-20 blur-[120px] rounded-full w-150 h-100 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
 				style={{
 					background: "radial-gradient(ellipse, #5b6af0, transparent 70%)",
 				}}
@@ -52,22 +52,21 @@ export function Hero() {
 			>
 				<div className="inline-flex items-center gap-2 bg-primary/10 mb-8 px-3 py-1.5 border border-primary/30 rounded-full font-mono text-primary text-xs">
 					<Sparkles size={11} />
-					Intelligent contribution matching
+					From zero to contribution
 				</div>
 
 				<h1
 					className="mb-6 font-normal text-foreground text-5xl md:text-7xl leading-[1.05]"
 					style={{ fontFamily: "'DM Serif Display', serif" }}
 				>
-					Find contributions
+					Contribute with confidence.
 					<br />
-					<em className="text-primary">worth making.</em>
+					<em className="text-primary">From day one.</em>
 				</h1>
 
 				<p className="mx-auto mb-12 max-w-2xl font-light text-muted-foreground text-lg md:text-xl leading-relaxed">
-					Stop scrolling through hundreds of repositories. init analyzes your
-					GitHub history and surfaces the open-source issues you are most likely
-					to successfully close.
+					Choose a GitHub repository. Init finds the right issue, explains the
+					code that matters, and gets you contributing faster.
 				</p>
 
 				<div className="flex sm:flex-row flex-col justify-center gap-3 mb-20">
@@ -77,7 +76,7 @@ export function Hero() {
 						className="flex justify-center items-center gap-2 bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 px-6 py-3 rounded-md font-medium text-primary-foreground transition-all"
 					>
 						<Github size={16} />
-						Connect GitHub Account
+						Get Started with GitHub
 						<ArrowRight size={14} />
 					</button>
 					<button
