@@ -9,22 +9,25 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
+import { z } from "zod";
 import { DetailPanel } from "#/features/dashboard/components/DetailPanel";
 import { IssueCard } from "#/features/dashboard/components/IssueCard";
 import { Topbar } from "#/features/dashboard/components/Topbar";
-import { ALL_ISSUES } from "#/features/dashboard/data";
-import type { Issue } from "#/features/dashboard/types";
+import type {
+	AnalyzeIssueResponse,
+	Issue,
+	IssuesResponse,
+} from "#/features/dashboard/types";
 
 const SORT_OPTIONS = ["Best match", "Newest", "Most stars", "Most active"];
+const tempRepo = "psf/requests";
 
 const fetchPopularIssues = createServerFn().handler(
-	async (): Promise<Issue[]> => {
-		const response = await fetch(
-			process.env.SERVER_URL || "http://localhost:8000",
-			{
-				headers: { accept: "application/json" },
-			},
-		);
+	async (): Promise<IssuesResponse> => {
+		const url = process.env.SERVER_URL || "http://localhost:8000";
+		const response = await fetch(`${url}/issues/${tempRepo}`, {
+			headers: { accept: "application/json" },
+		});
 
 		if (!response.ok) {
 			throw new Error(`Failed to fetch issues: ${response.statusText}`);
@@ -34,14 +37,44 @@ const fetchPopularIssues = createServerFn().handler(
 	},
 );
 
+const IssueSchema = z.object({
+	repo: z.string().min(1),
+	issueNumber: z.number().min(0),
+});
+
+const analyzeIssue = createServerFn({ method: "POST" })
+	.validator(IssueSchema)
+	.handler(
+		async ({ data: { repo, issueNumber } }): Promise<AnalyzeIssueResponse> => {
+			const url = process.env.SERVER_URL || "http://localhost:8000";
+			const payload = JSON.stringify({
+				repo,
+				issue_number: issueNumber,
+			});
+			const response = await fetch(`${url}/analyze`, {
+				headers: {
+					accept: "application/json",
+					"content-type": "application/json",
+				},
+				method: "POST",
+				body: payload,
+			});
+
+			if (!response.ok) {
+				throw new Error(`Failed to fetch analysis: ${response.statusText}`);
+			}
+
+			return response.json();
+		},
+	);
+
 export const Route = createFileRoute("/_dashboard/_layout/matches")({
 	component: RouteComponent,
 	loader: async (): Promise<{ issues: Issue[]; error: string | null }> => {
 		try {
 			const issuesData = await fetchPopularIssues();
-			console.log(issuesData);
 
-			return { issues: issuesData, error: null };
+			return { issues: issuesData.issues, error: null };
 		} catch (error) {
 			console.error("Error fetching issues:", error);
 			return { issues: [], error: "Failed to load issues" };
@@ -50,49 +83,67 @@ export const Route = createFileRoute("/_dashboard/_layout/matches")({
 });
 
 function RouteComponent() {
-	const [issues, setIssues] = useState<Issue[]>(ALL_ISSUES);
+	const { issues } = Route.useLoaderData();
 	const [selectedId, setSelectedId] = useState<number | null>(1);
 	const [repoFilter, setRepoFilter] = useState("all");
 	const [diffFilter, setDiffFilter] = useState("All");
 	const [sort, setSort] = useState("Best match");
 	const [showSort, setShowSort] = useState(false);
 	const [search, setSearch] = useState("");
-
-	const selectedIssue = issues.find((i) => i.id === selectedId) ?? null;
+	const [currentIssue, setCurrentIssue] = useState<AnalyzeIssueResponse | null>(
+		null,
+	);
 
 	// const repoOptions = ["all", ...addedRepos.map((r) => r.name)];
 	const repoOptions = ["all"];
 
 	const filtered = issues
 		.filter((i) => {
-			if (repoFilter !== "all" && !i.repo.includes(repoFilter)) return false;
-			if (diffFilter !== "All" && i.difficulty !== diffFilter) return false;
+			// if (repoFilter !== "all" && !i.repo.includes(repoFilter)) return false;
+			// if (diffFilter !== "All" && i.difficulty !== diffFilter) return false;
 			if (
 				search &&
-				!i.title.toLowerCase().includes(search.toLowerCase()) &&
-				!i.repo.toLowerCase().includes(search.toLowerCase())
+				!i.title.toLowerCase().includes(search.toLowerCase())
+				// &&
+				// !i.repo.toLowerCase().includes(search.toLowerCase())
 			)
 				return false;
 			return true;
 		})
 		.sort((a, b) => {
-			if (sort === "Best match") return b.matchScore - a.matchScore;
-			if (sort === "Newest") return a.openedDaysAgo - b.openedDaysAgo;
-			if (sort === "Most stars") return b.stars - a.stars;
+			// if (sort === "Best match") return b.matchScore - a.matchScore;
+			// if (sort === "Newest") return a.openedDaysAgo - b.openedDaysAgo;
+			// if (sort === "Most stars") return b.stars - a.stars;
 			if (sort === "Most active") return b.comments - a.comments;
 			return 0;
 		});
 
-	const toggleBookmark = (id: number) =>
-		setIssues((prev) =>
-			prev.map((i) => (i.id === id ? { ...i, bookmarked: !i.bookmarked } : i)),
-		);
+	const toggleBookmark = (_id: number) => () => {};
+	// setIssues((prev) =>
+	// 	prev.map((i) => (i.id === id ? { ...i, bookmarked: !i.bookmarked } : i)),
+	// );
+
+	const handleAnalyze = async (issueNumber: number) => {
+		setSelectedId(issueNumber === selectedId ? null : issueNumber);
+		try {
+			const data = await analyzeIssue({
+				data: {
+					repo: tempRepo,
+					issueNumber,
+				},
+			});
+
+			setCurrentIssue(data);
+		} catch (error) {
+			console.error("Analysis failed:", error);
+		}
+	};
 
 	return (
 		<div className="flex flex-col h-full">
 			<Topbar
 				title="Issue Matches"
-				subtitle={`${ALL_ISSUES.length} issues · sorted by compatibility`}
+				subtitle={`${issues.length} issues · sorted by compatibility`}
 			>
 				<button
 					type="button"
@@ -195,13 +246,11 @@ function RouteComponent() {
 					<AnimatePresence mode="popLayout">
 						{filtered.map((issue) => (
 							<IssueCard
-								key={issue.id}
+								key={issue.number}
 								issue={issue}
-								isSelected={selectedId === issue.id}
-								onClick={() =>
-									setSelectedId(issue.id === selectedId ? null : issue.id)
-								}
-								onBookmark={() => toggleBookmark(issue.id)}
+								isSelected={selectedId === issue.number}
+								onClick={() => handleAnalyze(issue.number)}
+								onBookmark={() => toggleBookmark(issue.number)}
 							/>
 						))}
 					</AnimatePresence>
@@ -214,7 +263,7 @@ function RouteComponent() {
 				</div>
 
 				<AnimatePresence>
-					{selectedIssue && (
+					{currentIssue && (
 						<motion.div
 							initial={{ width: 0, opacity: 0 }}
 							animate={{ width: 380, opacity: 1 }}
@@ -224,7 +273,7 @@ function RouteComponent() {
 						>
 							<div className="flex flex-col w-[380px] h-full">
 								<DetailPanel
-									issue={selectedIssue}
+									issue={currentIssue}
 									onClose={() => setSelectedId(null)}
 								/>
 							</div>

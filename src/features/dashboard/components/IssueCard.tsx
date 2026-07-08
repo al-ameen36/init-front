@@ -30,22 +30,24 @@ export function IssueCard({
 			}`}
 		>
 			<div className="flex items-start gap-3 mb-3">
-				<MatchRing score={issue.matchScore} size={42} />
+				{/* <MatchRing score={issue.matchScore} size={42} /> */}
+				<MatchRing score={81} size={42} />
 				<div className="flex-1 min-w-0">
 					<div className="flex items-center gap-2 mb-0.5">
 						<span className="font-mono text-[10px] text-muted-foreground">
-							{issue.repo}
+							{/* {issue.repo} */}
+							REPO_NAME
 						</span>
 						<span className="flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/50">
 							<Star size={9} />
-							{(issue.stars / 1000).toFixed(0)}k
+							{(3 / 1000).toFixed(0)}k{/* {(issue.stars / 1000).toFixed(0)}k */}
 						</span>
 					</div>
 					<div className="pr-6 font-medium text-foreground group-hover:text-white text-sm leading-snug transition-colors">
 						{issue.title}
 					</div>
 				</div>
-				<button
+				{/* <button
 					type="button"
 					onClick={(e) => {
 						e.stopPropagation();
@@ -57,10 +59,21 @@ export function IssueCard({
 						size={13}
 						fill={issue.bookmarked ? "currentColor" : "none"}
 					/>
+				</button> */}
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						onBookmark();
+					}}
+					className={`absolute top-4 right-4 p-1 rounded transition-colors ${false ? "text-primary" : "text-muted-foreground/30 hover:text-muted-foreground"}`}
+				>
+					<BookmarkIcon size={13} fill={false ? "currentColor" : "none"} />
 				</button>
 			</div>
 			<div className="flex flex-wrap items-center gap-1.5">
-				<DifficultyBadge level={issue.difficulty} />
+				{/* <DifficultyBadge level={issue.difficulty} /> */}
+				<DifficultyBadge level={"High"} />
 				{issue.labels.slice(0, 2).map((l) => (
 					<span
 						key={l}
@@ -76,7 +89,7 @@ export function IssueCard({
 					</span>
 					<span className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground/50">
 						<Clock size={9} />
-						{issue.openedDaysAgo}d
+						{issue.opened}d
 					</span>
 				</div>
 			</div>

@@ -4,26 +4,24 @@ import {
 	Code2,
 	ExternalLink,
 	FileCode,
-	GitBranch,
-	GitPullRequest,
 	ListChecks,
 	X,
 	Zap,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { MatchRing } from "../../../components/MatchRing";
-import type { Issue } from "../types";
+import type { AnalyzeIssueResponse } from "../types";
 
 export function DetailPanel({
 	issue,
 	onClose,
 }: {
-	issue: Issue;
+	issue: AnalyzeIssueResponse;
 	onClose: () => void;
 }) {
 	return (
 		<motion.div
-			key={issue.id}
+			key={issue.number}
 			initial={{ opacity: 0, x: 20 }}
 			animate={{ opacity: 1, x: 0 }}
 			exit={{ opacity: 0, x: 20 }}
@@ -53,6 +51,7 @@ export function DetailPanel({
 
 			<div className="flex-1 space-y-6 px-6 py-5 overflow-y-auto scrollbar-hide">
 				<div className="flex items-center gap-3 mb-4">
+					{/* <MatchRing score={issue.matchScore} size={52} /> */}
 					<MatchRing score={issue.matchScore} size={52} />
 					<div>
 						<div className="font-medium text-foreground text-sm">
@@ -68,7 +67,7 @@ export function DetailPanel({
 					</div>
 				</div>
 
-				<div className="space-y-2">
+				{/* <div className="space-y-2">
 					{issue.matchReasons.map((r, _i) => (
 						<div key={r} className="flex items-start gap-2.5">
 							<CheckCircle2
@@ -80,19 +79,23 @@ export function DetailPanel({
 							</span>
 						</div>
 					))}
-				</div>
+				</div> */}
 
 				<div className="gap-2 grid grid-cols-3">
 					{[
 						{
 							label: "Difficulty",
-							value: issue.difficulty,
-							color: issue.difficulty === "Low" ? "#34d399" : "#fbbf24",
+							value: issue.guide.difficulty,
+							color: issue.guide.difficulty === "Low" ? "#34d399" : "#fbbf24",
 						},
-						{ label: "Comments", value: `${issue.comments}`, color: "#a0aec8" },
+						{
+							label: "Comments",
+							value: `${issue.guide.comments}`,
+							color: "#a0aec8",
+						},
 						{
 							label: "Opened",
-							value: `${issue.openedDaysAgo}d ago`,
+							value: issue.guide.opened,
 							color: "#a0aec8",
 						},
 					].map(({ label, value, color }) => (
@@ -116,7 +119,7 @@ export function DetailPanel({
 						Summary
 					</div>
 					<p className="text-foreground/75 text-xs leading-relaxed">
-						{issue.description}
+						{issue.guide.summary}
 					</p>
 				</div>
 
@@ -126,7 +129,7 @@ export function DetailPanel({
 						Relevant files
 					</div>
 					<div className="space-y-1.5">
-						{issue.files.map((file) => (
+						{issue.guide.relevant_files.map((file) => (
 							<div
 								key={file}
 								className="group flex items-center gap-2.5 bg-muted/20 px-3 py-2 border border-border/60 hover:border-white/12 rounded-md transition-colors cursor-pointer"
@@ -150,7 +153,7 @@ export function DetailPanel({
 						Investigation path
 					</div>
 					<div className="space-y-2.5">
-						{issue.steps.map((step, i) => (
+						{issue.guide.investigation_path.map((step, i) => (
 							<div key={step} className="flex gap-3">
 								<div className="flex justify-center items-center bg-muted/40 mt-0.5 border border-border rounded-full w-4 h-4 shrink-0">
 									<span className="font-mono text-[8px] text-muted-foreground">
@@ -165,7 +168,7 @@ export function DetailPanel({
 					</div>
 				</div>
 
-				<div>
+				{/* <div>
 					<div className="flex items-center gap-1.5 mb-2.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 						<GitBranch size={9} />
 						Related PRs
@@ -181,7 +184,7 @@ export function DetailPanel({
 							</span>
 						))}
 					</div>
-				</div>
+				</div> */}
 			</div>
 
 			<div className="space-y-2 px-6 py-4 border-border border-t">

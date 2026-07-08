@@ -35,7 +35,7 @@ function RouteComponent() {
 
 	const handleConnect = () => {
 		setLoading(true);
-		setTimeout(() => navigate({ to: "/dashboard" }), 1200);
+		setTimeout(() => navigate({ to: "/matches" }), 1200);
 	};
 
 	return (

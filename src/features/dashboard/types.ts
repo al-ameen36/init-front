@@ -1,20 +1,60 @@
+// export type Issue = {
+// 	id: number;
+// 	repo: string;
+// 	title: string;
+// 	labels: string[];
+// 	difficulty: "Low" | "Medium" | "High";
+// 	matchScore: number;
+// 	stars: number;
+// 	openedDaysAgo: number;
+// 	comments: number;
+// 	description: string;
+// 	matchReasons: string[];
+// 	files: string[];
+// 	steps: string[];
+// 	related: string[];
+// 	language: string;
+// 	bookmarked: boolean;
+// };
+
 export type Issue = {
-	id: number;
-	repo: string;
+	number: number;
 	title: string;
+	url: string;
 	labels: string[];
-	difficulty: "Low" | "Medium" | "High";
-	matchScore: number;
-	stars: number;
-	openedDaysAgo: number;
 	comments: number;
-	description: string;
-	matchReasons: string[];
-	files: string[];
-	steps: string[];
-	related: string[];
+	opened: string;
+};
+
+export type IssuesResponse = {
+	issues: Issue[];
+};
+
+export type ScoredFile = {
+	file: string;
+	confidence_score: number;
+	reasoning: string;
+};
+
+export type InvestigationGuide = {
+	difficulty: "Low" | "Medium" | "High";
+	comments: number;
+	opened: string;
+	summary: string;
+	relevant_files: string[];
+	investigation_path: string[];
+};
+
+export type AnalyzeIssueResponse = {
+	number: number;
+	title: string;
+	repo: string;
 	language: string;
-	bookmarked: boolean;
+	matchScore: number;
+	matchReasons: string[];
+	related: string[];
+	scored_files: ScoredFile[];
+	guide: InvestigationGuide;
 };
 
 export type RepoStatus = "idle" | "analyzing" | "done";
