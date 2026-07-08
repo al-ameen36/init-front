@@ -1,3 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router";
 import {
 	AlertCircle,
 	CheckCircle2,
@@ -7,9 +8,13 @@ import {
 	MessageSquare,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { Topbar } from "./Topbar";
+import { Topbar } from "#/features/dashboard/components/Topbar";
 
-export function ActiveView() {
+export const Route = createFileRoute("/_dashboard/_layout/active")({
+	component: RouteComponent,
+});
+
+function RouteComponent() {
 	const ACTIVE = [
 		{
 			id: 101,

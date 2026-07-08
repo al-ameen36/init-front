@@ -1,3 +1,5 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import {
 	ChevronDown,
 	Filter,
@@ -7,15 +9,47 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { ALL_ISSUES } from "../data";
-import type { AddedRepo, Issue } from "../types";
-import { DetailPanel } from "./DetailPanel";
-import { IssueCard } from "./IssueCard";
-import { Topbar } from "./Topbar";
+import { DetailPanel } from "#/features/dashboard/components/DetailPanel";
+import { IssueCard } from "#/features/dashboard/components/IssueCard";
+import { Topbar } from "#/features/dashboard/components/Topbar";
+import { ALL_ISSUES } from "#/features/dashboard/data";
+import type { Issue } from "#/features/dashboard/types";
 
 const SORT_OPTIONS = ["Best match", "Newest", "Most stars", "Most active"];
 
-export function MatchesView({ addedRepos }: { addedRepos: AddedRepo[] }) {
+const fetchPopularIssues = createServerFn().handler(
+	async (): Promise<Issue[]> => {
+		const response = await fetch(
+			process.env.SERVER_URL || "http://localhost:8000",
+			{
+				headers: { accept: "application/json" },
+			},
+		);
+
+		if (!response.ok) {
+			throw new Error(`Failed to fetch issues: ${response.statusText}`);
+		}
+
+		return response.json();
+	},
+);
+
+export const Route = createFileRoute("/_dashboard/_layout/matches")({
+	component: RouteComponent,
+	loader: async (): Promise<{ issues: Issue[]; error: string | null }> => {
+		try {
+			const issuesData = await fetchPopularIssues();
+			console.log(issuesData);
+
+			return { issues: issuesData, error: null };
+		} catch (error) {
+			console.error("Error fetching issues:", error);
+			return { issues: [], error: "Failed to load issues" };
+		}
+	},
+});
+
+function RouteComponent() {
 	const [issues, setIssues] = useState<Issue[]>(ALL_ISSUES);
 	const [selectedId, setSelectedId] = useState<number | null>(1);
 	const [repoFilter, setRepoFilter] = useState("all");
@@ -26,7 +60,8 @@ export function MatchesView({ addedRepos }: { addedRepos: AddedRepo[] }) {
 
 	const selectedIssue = issues.find((i) => i.id === selectedId) ?? null;
 
-	const repoOptions = ["all", ...addedRepos.map((r) => r.name)];
+	// const repoOptions = ["all", ...addedRepos.map((r) => r.name)];
+	const repoOptions = ["all"];
 
 	const filtered = issues
 		.filter((i) => {
@@ -96,7 +131,8 @@ export function MatchesView({ addedRepos }: { addedRepos: AddedRepo[] }) {
 					</button>
 				))}
 
-				{addedRepos.length > 0 && <div className="bg-border w-px h-4" />}
+				{/* {addedRepos.length > 0 && <div className="bg-border w-px h-4" />} */}
+				{1 > 0 && <div className="bg-border w-px h-4" />}
 
 				{["All", "Low", "Medium", "High"].map((d) => (
 					<button

@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
 	ArrowRight,
 	BarChart3,
@@ -42,8 +42,26 @@ export function Sidebar({
 
 			<nav className="flex-1 space-y-0.5 px-3 py-4">
 				{NAV.map(({ id, icon: Icon, label }) => (
-					<button
-						type="button"
+					// <button
+					// 	type="button"
+					// 	key={id}
+					// 	onClick={() => setActive(id)}
+					// 	className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+					// 		active === id
+					// 			? "bg-primary/12 text-primary"
+					// 			: "text-muted-foreground hover:text-foreground hover:bg-white/4"
+					// 	}`}
+					// >
+					// 	<Icon size={16} />
+					// 	{label}
+					// 	{id === "repos" && addedRepos.length > 0 && (
+					// 		<span className="bg-white/6 ml-auto px-1.5 py-0.5 rounded font-mono text-[10px] text-muted-foreground">
+					// 			{addedRepos.length}
+					// 		</span>
+					// 	)}
+					// </button>
+					<Link
+						to={`/${id}`}
 						key={id}
 						onClick={() => setActive(id)}
 						className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
@@ -59,7 +77,7 @@ export function Sidebar({
 								{addedRepos.length}
 							</span>
 						)}
-					</button>
+					</Link>
 				))}
 			</nav>
 

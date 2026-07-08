@@ -12,8 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardLayoutRouteImport } from './routes/_dashboard/_layout'
+import { Route as DashboardLayoutSkillsRouteImport } from './routes/_dashboard/_layout.skills'
+import { Route as DashboardLayoutReposRouteImport } from './routes/_dashboard/_layout.repos'
+import { Route as DashboardLayoutMatchesRouteImport } from './routes/_dashboard/_layout.matches'
+import { Route as DashboardLayoutActiveRouteImport } from './routes/_dashboard/_layout.active'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -30,53 +34,108 @@ const OnboardingRoute = OnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardLayoutRoute = DashboardLayoutRouteImport.update({
+  id: '/_dashboard/_layout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardLayoutSkillsRoute = DashboardLayoutSkillsRouteImport.update({
+  id: '/skills',
+  path: '/skills',
+  getParentRoute: () => DashboardLayoutRoute,
+} as any)
+const DashboardLayoutReposRoute = DashboardLayoutReposRouteImport.update({
+  id: '/repos',
+  path: '/repos',
+  getParentRoute: () => DashboardLayoutRoute,
+} as any)
+const DashboardLayoutMatchesRoute = DashboardLayoutMatchesRouteImport.update({
+  id: '/matches',
+  path: '/matches',
+  getParentRoute: () => DashboardLayoutRoute,
+} as any)
+const DashboardLayoutActiveRoute = DashboardLayoutActiveRouteImport.update({
+  id: '/active',
+  path: '/active',
+  getParentRoute: () => DashboardLayoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/onboarding': typeof OnboardingRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/active': typeof DashboardLayoutActiveRoute
+  '/matches': typeof DashboardLayoutMatchesRoute
+  '/repos': typeof DashboardLayoutReposRoute
+  '/skills': typeof DashboardLayoutSkillsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/onboarding': typeof OnboardingRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/active': typeof DashboardLayoutActiveRoute
+  '/matches': typeof DashboardLayoutMatchesRoute
+  '/repos': typeof DashboardLayoutReposRoute
+  '/skills': typeof DashboardLayoutSkillsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/onboarding': typeof OnboardingRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/_dashboard/_layout': typeof DashboardLayoutRouteWithChildren
+  '/_dashboard/_layout/active': typeof DashboardLayoutActiveRoute
+  '/_dashboard/_layout/matches': typeof DashboardLayoutMatchesRoute
+  '/_dashboard/_layout/repos': typeof DashboardLayoutReposRoute
+  '/_dashboard/_layout/skills': typeof DashboardLayoutSkillsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/onboarding' | '/signin' | '/signup'
+  fullPaths:
+    | '/'
+    | '/onboarding'
+    | '/signin'
+    | '/signup'
+    | '/active'
+    | '/matches'
+    | '/repos'
+    | '/skills'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/onboarding' | '/signin' | '/signup'
-  id: '__root__' | '/' | '/dashboard' | '/onboarding' | '/signin' | '/signup'
+  to:
+    | '/'
+    | '/onboarding'
+    | '/signin'
+    | '/signup'
+    | '/active'
+    | '/matches'
+    | '/repos'
+    | '/skills'
+  id:
+    | '__root__'
+    | '/'
+    | '/onboarding'
+    | '/signin'
+    | '/signup'
+    | '/_dashboard/_layout'
+    | '/_dashboard/_layout/active'
+    | '/_dashboard/_layout/matches'
+    | '/_dashboard/_layout/repos'
+    | '/_dashboard/_layout/skills'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
   OnboardingRoute: typeof OnboardingRoute
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
+  DashboardLayoutRoute: typeof DashboardLayoutRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -102,13 +161,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -116,15 +168,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_dashboard/_layout': {
+      id: '/_dashboard/_layout'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof DashboardLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_dashboard/_layout/skills': {
+      id: '/_dashboard/_layout/skills'
+      path: '/skills'
+      fullPath: '/skills'
+      preLoaderRoute: typeof DashboardLayoutSkillsRouteImport
+      parentRoute: typeof DashboardLayoutRoute
+    }
+    '/_dashboard/_layout/repos': {
+      id: '/_dashboard/_layout/repos'
+      path: '/repos'
+      fullPath: '/repos'
+      preLoaderRoute: typeof DashboardLayoutReposRouteImport
+      parentRoute: typeof DashboardLayoutRoute
+    }
+    '/_dashboard/_layout/matches': {
+      id: '/_dashboard/_layout/matches'
+      path: '/matches'
+      fullPath: '/matches'
+      preLoaderRoute: typeof DashboardLayoutMatchesRouteImport
+      parentRoute: typeof DashboardLayoutRoute
+    }
+    '/_dashboard/_layout/active': {
+      id: '/_dashboard/_layout/active'
+      path: '/active'
+      fullPath: '/active'
+      preLoaderRoute: typeof DashboardLayoutActiveRouteImport
+      parentRoute: typeof DashboardLayoutRoute
+    }
   }
 }
 
+interface DashboardLayoutRouteChildren {
+  DashboardLayoutActiveRoute: typeof DashboardLayoutActiveRoute
+  DashboardLayoutMatchesRoute: typeof DashboardLayoutMatchesRoute
+  DashboardLayoutReposRoute: typeof DashboardLayoutReposRoute
+  DashboardLayoutSkillsRoute: typeof DashboardLayoutSkillsRoute
+}
+
+const DashboardLayoutRouteChildren: DashboardLayoutRouteChildren = {
+  DashboardLayoutActiveRoute: DashboardLayoutActiveRoute,
+  DashboardLayoutMatchesRoute: DashboardLayoutMatchesRoute,
+  DashboardLayoutReposRoute: DashboardLayoutReposRoute,
+  DashboardLayoutSkillsRoute: DashboardLayoutSkillsRoute,
+}
+
+const DashboardLayoutRouteWithChildren = DashboardLayoutRoute._addFileChildren(
+  DashboardLayoutRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
   OnboardingRoute: OnboardingRoute,
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,
+  DashboardLayoutRoute: DashboardLayoutRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

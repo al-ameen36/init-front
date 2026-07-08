@@ -1,3 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router";
 import {
 	AlertCircle,
 	BookOpen,
@@ -13,20 +14,36 @@ import {
 	X,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { LANG_COLOR } from "../data";
-import type { AddedRepo } from "../types";
-import { ComplexityBadge } from "./ComplexityBadge";
-import { Topbar } from "./Topbar";
+import { ComplexityBadge } from "#/features/dashboard/components/ComplexityBadge";
+import { Topbar } from "#/features/dashboard/components/Topbar";
+import { LANG_COLOR } from "#/features/dashboard/data";
 
-export function ReposView({
-	repos,
-	onAdd,
-	onRemove,
-}: {
-	repos: AddedRepo[];
-	onAdd: () => void;
-	onRemove: (id: number) => void;
-}) {
+export const Route = createFileRoute("/_dashboard/_layout/repos")({
+	component: RouteComponent,
+});
+
+type Repo = {
+	id: number;
+	owner: string;
+	name: string;
+	language: string;
+	complexity: string;
+	stars: number;
+	contributors: string[];
+	lastCommit: string;
+	openIssues: number;
+	goodFirstIssues: number;
+	matchedIssues: number;
+	techStack: string[];
+	dependencies: string[];
+	hasContributing: true;
+};
+
+function RouteComponent() {
+	const repos: Repo[] = [];
+	const onAdd = () => {};
+	const onRemove = (_id: number) => {};
+
 	return (
 		<div className="flex flex-col h-full">
 			<Topbar

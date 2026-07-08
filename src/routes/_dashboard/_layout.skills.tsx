@@ -1,3 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router";
 import {
 	BarChart3,
 	Code2,
@@ -14,11 +15,15 @@ import {
 	ResponsiveContainer,
 	Tooltip,
 } from "recharts";
-import { SkillBar } from "../../../components/SkillBar";
-import { ACTIVITY, SKILL_RADAR, USER } from "../data";
-import { Topbar } from "./Topbar";
+import { SkillBar } from "#/components/SkillBar";
+import { Topbar } from "#/features/dashboard/components/Topbar";
+import { ACTIVITY, SKILL_RADAR, USER } from "#/features/dashboard/data";
 
-export function SkillsView() {
+export const Route = createFileRoute("/_dashboard/_layout/skills")({
+	component: RouteComponent,
+});
+
+function RouteComponent() {
 	return (
 		<div className="flex flex-col h-full">
 			<Topbar
