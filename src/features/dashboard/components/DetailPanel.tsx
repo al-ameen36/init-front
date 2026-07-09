@@ -50,7 +50,6 @@ export function DetailPanel({
 
 			<div className="flex-1 space-y-6 px-6 py-5 overflow-y-auto scrollbar-hide">
 				<div className="flex items-center gap-3 mb-4">
-					{/* <MatchRing score={issue.matchScore} size={52} /> */}
 					<MatchRing score={issue.matchScore} size={52} />
 					<div>
 						<div className="font-medium text-foreground text-sm">
@@ -65,20 +64,6 @@ export function DetailPanel({
 						</div>
 					</div>
 				</div>
-
-				{/* <div className="space-y-2">
-					{issue.matchReasons.map((r, _i) => (
-						<div key={r} className="flex items-start gap-2.5">
-							<CheckCircle2
-								size={13}
-								className="mt-0.5 text-emerald-400 shrink-0"
-							/>
-							<span className="text-muted-foreground text-xs leading-relaxed">
-								{r}
-							</span>
-						</div>
-					))}
-				</div> */}
 
 				<div className="gap-2 grid grid-cols-3">
 					{[
@@ -166,24 +151,6 @@ export function DetailPanel({
 						))}
 					</div>
 				</div>
-
-				{/* <div>
-					<div className="flex items-center gap-1.5 mb-2.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
-						<GitBranch size={9} />
-						Related PRs
-					</div>
-					<div className="flex flex-wrap gap-2">
-						{issue.related.map((pr) => (
-							<span
-								key={pr}
-								className="flex items-center gap-1.5 bg-primary/5 hover:bg-primary/10 px-2.5 py-1.5 border border-primary/20 rounded-md font-mono text-[11px] text-primary transition-colors cursor-pointer"
-							>
-								<GitPullRequest size={10} />
-								{pr}
-							</span>
-						))}
-					</div>
-				</div> */}
 			</div>
 
 			<div className="space-y-2 px-6 py-4 border-border border-t">
