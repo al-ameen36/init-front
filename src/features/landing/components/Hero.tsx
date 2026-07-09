@@ -81,7 +81,7 @@ export function Hero() {
 					</button>
 					<button
 						type="button"
-						onClick={() => navigate({ to: "/dashboard" })}
+						onClick={() => navigate({ to: "/matches" })}
 						className="flex justify-center items-center gap-2 px-6 py-3 border border-border hover:border-white/15 rounded-md font-medium text-foreground/70 hover:text-foreground transition-all"
 					>
 						View Demo

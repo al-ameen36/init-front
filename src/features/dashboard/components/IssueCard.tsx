@@ -66,9 +66,9 @@ export function IssueCard({
 						e.stopPropagation();
 						onBookmark();
 					}}
-					className={`absolute top-4 right-4 p-1 rounded transition-colors ${false ? "text-primary" : "text-muted-foreground/30 hover:text-muted-foreground"}`}
+					className="absolute top-4 right-4 p-1 rounded transition-colors text-muted-foreground/30 hover:text-muted-foreground"
 				>
-					<BookmarkIcon size={13} fill={false ? "currentColor" : "none"} />
+					<BookmarkIcon size={13} fill="none" />
 				</button>
 			</div>
 			<div className="flex flex-wrap items-center gap-1.5">

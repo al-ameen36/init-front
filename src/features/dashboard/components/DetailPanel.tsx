@@ -1,6 +1,5 @@
 import {
 	ArrowRight,
-	CheckCircle2,
 	Code2,
 	ExternalLink,
 	FileCode,

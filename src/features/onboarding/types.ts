@@ -1,8 +1,19 @@
 export type PhaseId =
-	| "connecting"
-	| "repos"
-	| "languages"
-	| "history"
 	| "profile"
-	| "matching"
+	| "repositories"
+	| "languages"
+	| "technologies"
+	| "pull_requests"
 	| "done";
+
+export type DevResult = {
+	username?: string;
+	avatar_url?: string;
+	name?: string;
+	bio?: string;
+	repositories?: number;
+	stars?: number;
+	languages?: string[];
+	technologies?: Record<string, number>;
+	pull_requests?: { total: number; merged: number };
+};

@@ -18,22 +18,14 @@ import type {
 	Issue,
 	IssuesResponse,
 } from "#/features/dashboard/types";
+import { analyzeIssue as callAnalyzeIssue, fetchIssues } from "#/lib/api";
 
 const SORT_OPTIONS = ["Best match", "Newest", "Most stars", "Most active"];
 const tempRepo = "psf/requests";
 
 const fetchPopularIssues = createServerFn().handler(
 	async (): Promise<IssuesResponse> => {
-		const url = process.env.SERVER_URL || "http://localhost:8000";
-		const response = await fetch(`${url}/issues/${tempRepo}`, {
-			headers: { accept: "application/json" },
-		});
-
-		if (!response.ok) {
-			throw new Error(`Failed to fetch issues: ${response.statusText}`);
-		}
-
-		return response.json();
+		return fetchIssues(tempRepo);
 	},
 );
 
@@ -46,25 +38,7 @@ const analyzeIssue = createServerFn({ method: "POST" })
 	.validator(IssueSchema)
 	.handler(
 		async ({ data: { repo, issueNumber } }): Promise<AnalyzeIssueResponse> => {
-			const url = process.env.SERVER_URL || "http://localhost:8000";
-			const payload = JSON.stringify({
-				repo,
-				issue_number: issueNumber,
-			});
-			const response = await fetch(`${url}/analyze`, {
-				headers: {
-					accept: "application/json",
-					"content-type": "application/json",
-				},
-				method: "POST",
-				body: payload,
-			});
-
-			if (!response.ok) {
-				throw new Error(`Failed to fetch analysis: ${response.statusText}`);
-			}
-
-			return response.json();
+			return callAnalyzeIssue(repo, issueNumber);
 		},
 	);
 

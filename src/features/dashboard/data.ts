@@ -1,4 +1,4 @@
-import type { AnalysisPhase, Issue } from "./types";
+import type { AnalysisPhase } from "./types";
 
 export const USER = {
 	name: "Mara Solis",
