@@ -2,15 +2,15 @@ export type Phase =
 	| "connecting"
 	| "repos"
 	| "languages"
-	| "history"
+	| "tools"
 	| "profile"
-	| "matching"
 	| "done";
-
-export type AccountType = "developer" | "organization";
 
 export type DeveloperProfile = {
 	username?: string;
+	avatar_url?: string;
+	name?: string;
+	bio?: string;
 	repos_count?: number;
 	merged_prs?: number;
 	commit_stats?: { total_commits?: number };

@@ -33,7 +33,7 @@ export function Onboarding() {
 			: displayPhase >= 5
 				? "profile"
 				: displayPhase >= 4
-					? "history"
+					? "tools"
 					: displayPhase >= 2
 						? "languages"
 						: displayPhase >= 1
@@ -191,7 +191,6 @@ export function Onboarding() {
 										<DevLivePanel
 											phase={panelPhase}
 											analysis={profile ?? undefined}
-											loading={loading}
 										/>
 									</div>
 								)}

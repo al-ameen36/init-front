@@ -16,31 +16,29 @@ import { useCountUp } from "./helpers";
 export function DevLivePanel({
 	phase,
 	analysis,
-	loading,
 }: {
 	phase: Phase;
 	analysis?: DeveloperProfile;
-	loading?: boolean;
 }) {
 	const isReady = analysis !== undefined && analysis !== null;
 	const username = isReady ? analysis?.username || null : null;
+	const avatarUrl = isReady ? analysis?.avatar_url || null : null;
+	const displayName = isReady ? analysis?.name || username || null : null;
 
 	const repoCount = useCountUp(
 		analysis?.repos_count || 0,
 		isReady &&
-			["repos", "languages", "history", "profile", "matching", "done"].includes(
-				phase,
-			),
+			["repos", "languages", "tools", "profile", "done"].includes(phase),
 		1200,
 	);
 	const prCount = useCountUp(
 		analysis?.merged_prs || 0,
-		isReady && ["history", "profile", "matching", "done"].includes(phase),
+		isReady && ["profile", "done"].includes(phase),
 		1100,
 	);
 	const commitCount = useCountUp(
 		analysis?.commit_stats?.total_commits || 0,
-		isReady && ["history", "profile", "matching", "done"].includes(phase),
+		isReady && ["profile", "done"].includes(phase),
 		1200,
 	);
 	const totalStars = analysis?.total_stars || 0;
@@ -49,36 +47,23 @@ export function DevLivePanel({
 	const repos = analysis?.public_repos || [];
 	const languages = analysis?.primary_languages || [];
 	const techPackages = analysis?.tech_stack?.packages || [];
-	const showRepos = [
-		"repos",
-		"languages",
-		"history",
-		"profile",
-		"matching",
-		"done",
-	].includes(phase);
-	const showLangs = [
-		"languages",
-		"history",
-		"profile",
-		"matching",
-		"done",
-	].includes(phase);
-	const showTech = ["history", "profile", "matching", "done"].includes(phase);
-	const showHistory = ["history", "profile", "matching", "done"].includes(
+	const showRepos = ["repos", "languages", "tools", "profile", "done"].includes(
 		phase,
 	);
+	const showLangs = ["languages", "tools", "profile", "done"].includes(phase);
+	const showTech = ["tools", "profile", "done"].includes(phase);
+	const showHistory = ["profile", "done"].includes(phase);
 
 	return (
 		<div className="space-y-4">
-			{loading || !isReady ? (
+			{!isReady ? (
 				<div className="flex items-center gap-3 bg-card px-4 py-3 border border-border rounded-xl">
 					<div className="flex justify-center items-center bg-muted/50 border border-border rounded-lg w-8 h-8">
 						<Github size={15} className="text-muted-foreground" />
 					</div>
 					<div className="flex-1">
 						<div className="font-medium text-muted-foreground text-xs">
-							Fetching GitHub data...
+							Connecting to GitHub...
 						</div>
 						<div className="font-mono text-[10px] text-muted-foreground">
 							github.com/...
@@ -92,14 +77,22 @@ export function DevLivePanel({
 					animate={{ opacity: 1, y: 0 }}
 					className="flex items-center gap-3 bg-card px-4 py-3 border border-border rounded-xl"
 				>
-					<div className="flex justify-center items-center bg-white/8 border border-border rounded-lg w-8 h-8">
-						<Github size={15} className="text-foreground" />
+					<div className="flex justify-center items-center bg-white/8 border border-border rounded-lg w-8 h-8 overflow-hidden">
+						{avatarUrl ? (
+							<img
+								src={avatarUrl}
+								alt={username || "avatar"}
+								className="w-full h-full object-cover"
+							/>
+						) : (
+							<Github size={15} className="text-foreground" />
+						)}
 					</div>
-					<div className="flex-1">
-						<div className="font-medium text-foreground text-xs">
-							{username}
+					<div className="flex-1 min-w-0">
+						<div className="font-medium text-foreground text-xs truncate">
+							{displayName || username}
 						</div>
-						<div className="font-mono text-[10px] text-muted-foreground">
+						<div className="font-mono text-[10px] text-muted-foreground truncate">
 							github.com/{username}
 						</div>
 					</div>
@@ -229,45 +222,39 @@ export function DevLivePanel({
 					{[
 						{
 							icon: GitCommitVertical,
-							label: "Commits",
 							value: commitCount,
+							label: "Commits",
 							color: "#22d3ee",
 						},
 						{
 							icon: Star,
-							label: `${totalStars.toLocaleString()}`,
-							sub: "stars",
+							value: totalStars,
+							label: "Stars",
 							color: "#f59e0b",
 						},
 						{
 							icon: Code,
-							label: `${foundLangs} lang`,
-							sub: "found",
+							value: foundLangs,
+							label: "Languages",
 							color: "#10b981",
 						},
 						{
 							icon: GitPullRequest,
-							label: `${prCount} prs`,
-							sub: "merged",
+							value: prCount,
+							label: "PRs merged",
 							color: "#6366f1",
 						},
-					].map(({ icon: Icon, label, value, color, sub }) => (
+					].map(({ icon: Icon, value, label, color }) => (
 						<div
-							key={label || sub}
+							key={label}
 							className="bg-card p-3 border border-border rounded-xl text-center"
 						>
-							{Icon && (
-								<Icon size={13} style={{ color }} className="mx-auto mb-1.5" />
-							)}
+							<Icon size={13} style={{ color }} className="mx-auto mb-1.5" />
 							<div className="font-medium text-foreground text-base">
-								{value !== undefined
-									? value.toLocaleString()
-									: sub
-										? label
-										: "…"}
+								{value.toLocaleString()}
 							</div>
 							<div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-								{value === undefined ? sub : label}
+								{label}
 							</div>
 						</div>
 					))}

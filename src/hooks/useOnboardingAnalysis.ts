@@ -10,26 +10,21 @@ function toProfile(d: Record<string, unknown>): Partial<DeveloperProfile> {
 	const out: Record<string, unknown> = {};
 
 	if (d.username != null) out.username = d.username;
+	if (d.avatar_url != null) out.avatar_url = d.avatar_url;
+	if (d.name != null) out.name = d.name;
+	if (d.bio != null) out.bio = d.bio;
 	if (d.count != null) out.repos_count = d.count;
-	if (d.repositories != null) out.repos_count = d.repositories;
 	if (d.repos != null) out.public_repos = d.repos;
 	if (d.stars != null) out.total_stars = d.stars;
 	if (d.languages != null) out.primary_languages = d.languages;
 	if (d.packages != null) {
 		out.tech_stack = { packages: Object.keys(d.packages as object) };
+	} else if (Array.isArray(d.technologies)) {
+		out.tech_stack = { packages: d.technologies as string[] };
 	}
-	if (d.technologies != null) {
-		out.tech_stack = { packages: Object.keys(d.technologies as object) };
-	}
-	if (d.total != null || d.merged != null) {
-		out.merged_prs = (d.merged as number) ?? 0;
-	}
-	if (
-		d.pull_requests != null &&
-		typeof d.pull_requests === "object" &&
-		(d.pull_requests as { merged?: number }).merged != null
-	) {
-		out.merged_prs = (d.pull_requests as { merged: number }).merged;
+	if (d.merged != null) out.merged_prs = d.merged as number;
+	if (d.total_commits != null) {
+		out.commit_stats = { total_commits: d.total_commits as number };
 	}
 
 	return out as Partial<DeveloperProfile>;
