@@ -8,7 +8,7 @@ import {
 	SlidersHorizontal,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { DetailPanel } from "#/features/dashboard/components/DetailPanel";
 import { IssueCard } from "#/features/dashboard/components/IssueCard";
@@ -57,59 +57,146 @@ export const Route = createFileRoute("/_dashboard/_layout/matches")({
 });
 
 function RouteComponent() {
-	const { issues } = Route.useLoaderData();
-	const [selectedId, setSelectedId] = useState<number | null>(1);
+	const { issues: initialIssues } = Route.useLoaderData();
+	const [selectedId, setSelectedId] = useState<number | null>(null);
 	const [repoFilter, setRepoFilter] = useState("all");
 	const [diffFilter, setDiffFilter] = useState("All");
 	const [sort, setSort] = useState("Best match");
 	const [showSort, setShowSort] = useState(false);
 	const [search, setSearch] = useState("");
-	const [currentIssue, setCurrentIssue] = useState<AnalyzeIssueResponse | null>(
-		null,
-	);
 
-	// const repoOptions = ["all", ...addedRepos.map((r) => r.name)];
+	const [issues, setIssues] = useState<Issue[]>(initialIssues);
+	const [analysisCache, setAnalysisCache] = useState<
+		Map<number, AnalyzeIssueResponse>
+	>(new Map());
+	const [analyzing, setAnalyzing] = useState<Set<number>>(new Set());
+
+	useEffect(() => {
+		setIssues(initialIssues);
+	}, [initialIssues]);
+
+	useEffect(() => {
+		const controller = new AbortController();
+
+		initialIssues.forEach((issue) => {
+			if (!analysisCache.has(issue.number) && !analyzing.has(issue.number)) {
+				setAnalyzing((prev) => new Set(prev).add(issue.number));
+				analyzeIssue({
+					data: { repo: tempRepo, issueNumber: issue.number },
+				})
+					.then((data) => {
+						if (controller.signal.aborted) return;
+						setAnalysisCache((prev) => {
+							const next = new Map(prev);
+							next.set(issue.number, data);
+							return next;
+						});
+						setIssues((prev) =>
+							prev.map((i) =>
+								i.number === issue.number
+									? {
+											...i,
+											difficulty: data.guide.difficulty,
+											matchScore: data.matchScore,
+											analysisStatus: "done" as const,
+										}
+									: i,
+							),
+						);
+					})
+					.catch(() => {
+						if (controller.signal.aborted) return;
+						setIssues((prev) =>
+							prev.map((i) =>
+								i.number === issue.number
+									? { ...i, analysisStatus: "error" as const }
+									: i,
+							),
+						);
+					})
+					.finally(() => {
+						if (controller.signal.aborted) return;
+						setAnalyzing((prev) => {
+							const next = new Set(prev);
+							next.delete(issue.number);
+							return next;
+						});
+					});
+			}
+		});
+
+		return () => {
+			controller.abort();
+		};
+	}, [initialIssues, analysisCache, analyzing]);
+
 	const repoOptions = ["all"];
 
 	const filtered = issues
 		.filter((i) => {
-			// if (repoFilter !== "all" && !i.repo.includes(repoFilter)) return false;
-			// if (diffFilter !== "All" && i.difficulty !== diffFilter) return false;
-			if (
-				search &&
-				!i.title.toLowerCase().includes(search.toLowerCase())
-				// &&
-				// !i.repo.toLowerCase().includes(search.toLowerCase())
-			)
+			if (search && !i.title.toLowerCase().includes(search.toLowerCase()))
 				return false;
 			return true;
 		})
 		.sort((a, b) => {
-			// if (sort === "Best match") return b.matchScore - a.matchScore;
-			// if (sort === "Newest") return a.openedDaysAgo - b.openedDaysAgo;
-			// if (sort === "Most stars") return b.stars - a.stars;
+			if (sort === "Best match")
+				return (b.matchScore ?? 0) - (a.matchScore ?? 0);
 			if (sort === "Most active") return b.comments - a.comments;
 			return 0;
 		});
 
 	const toggleBookmark = (_id: number) => () => {};
-	// setIssues((prev) =>
-	// 	prev.map((i) => (i.id === id ? { ...i, bookmarked: !i.bookmarked } : i)),
-	// );
 
 	const handleAnalyze = async (issueNumber: number) => {
 		setSelectedId(issueNumber === selectedId ? null : issueNumber);
+
+		const cached = analysisCache.get(issueNumber);
+		if (cached) {
+			return;
+		}
+
+		if (analyzing.has(issueNumber)) {
+			return;
+		}
+
+		setAnalyzing((prev) => new Set(prev).add(issueNumber));
 		try {
 			const data = await analyzeIssue({
-				data: {
-					repo: tempRepo,
-					issueNumber,
-				},
+				data: { repo: tempRepo, issueNumber },
 			});
 
-			setCurrentIssue(data);
+			setAnalysisCache((prev) => {
+				const next = new Map(prev);
+				next.set(issueNumber, data);
+				return next;
+			});
+			setIssues((prev) =>
+				prev.map((i) =>
+					i.number === issueNumber
+						? {
+								...i,
+								difficulty: data.guide.difficulty,
+								matchScore: data.matchScore,
+								analysisStatus: "done" as const,
+							}
+						: i,
+				),
+			);
 		} catch (error) {
 			console.error("Analysis failed:", error);
+			setIssues((prev) =>
+				prev.map((i) =>
+					i.number === issueNumber
+						? { ...i, analysisStatus: "error" as const }
+						: i,
+				),
+			);
+		} finally {
+			setAnalyzing((prev) => {
+				const next = new Set(prev);
+				next.delete(issueNumber);
+				return next;
+			});
 		}
 	};
 
@@ -237,17 +324,24 @@ function RouteComponent() {
 				</div>
 
 				<AnimatePresence>
-					{currentIssue && (
+					{selectedId && (
 						<motion.div
 							initial={{ width: 0, opacity: 0 }}
 							animate={{ width: 380, opacity: 1 }}
 							exit={{ width: 0, opacity: 0 }}
-							transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+							transition={{
+								duration: 0.35,
+								ease: [0.16, 1, 0.3, 1],
+							}}
 							className="border-border border-l overflow-hidden shrink-0"
 						>
 							<div className="flex flex-col w-[380px] h-full">
 								<DetailPanel
-									issue={currentIssue}
+									issue={analysisCache.get(selectedId) || null}
+									basicIssue={
+										issues.find((i) => i.number === selectedId) || null
+									}
+									isAnalyzing={analyzing.has(selectedId)}
 									onClose={() => setSelectedId(null)}
 								/>
 							</div>

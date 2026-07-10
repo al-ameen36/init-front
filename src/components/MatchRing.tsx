@@ -1,28 +1,48 @@
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function MatchRing({
 	score,
 	size = 44,
+	isLoading = false,
 }: {
-	score: number;
+	score: number | undefined;
 	size?: number;
+	isLoading?: boolean;
 }) {
 	const r = (size - 6) / 2;
 	const circ = 2 * Math.PI * r;
 	const [animated, setAnimated] = useState(0);
+
 	useEffect(() => {
-		const t = setTimeout(() => setAnimated(score), 200);
+		const t = setTimeout(() => setAnimated(score ?? 0), 200);
 		return () => clearTimeout(t);
 	}, [score]);
+
 	const offset = circ - (animated / 100) * circ;
 	const color =
-		score >= 90
+		score !== undefined && score >= 90
 			? "#5b6af0"
-			: score >= 80
+			: score !== undefined && score >= 80
 				? "#22d3ee"
-				: score >= 70
+				: score !== undefined && score >= 70
 					? "#a78bfa"
 					: "#5a6a8a";
+
+	if (isLoading) {
+		return (
+			<div
+				className="relative flex justify-center items-center shrink-0"
+				style={{ width: size, height: size }}
+			>
+				<Loader2
+					size={size * 0.6}
+					className="text-muted-foreground/40 animate-spin"
+				/>
+			</div>
+		);
+	}
+
 	return (
 		<div
 			className="relative flex justify-center items-center shrink-0"
@@ -59,7 +79,7 @@ export function MatchRing({
 				/>
 			</svg>
 			<span className="font-mono font-medium text-[10px]" style={{ color }}>
-				{score}%
+				{score !== undefined ? `${score}%` : "—"}
 			</span>
 		</div>
 	);

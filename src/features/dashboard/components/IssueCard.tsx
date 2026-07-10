@@ -15,6 +15,12 @@ export function IssueCard({
 	onClick: () => void;
 	onBookmark: () => void;
 }) {
+	const matchScore = issue.matchScore;
+	const difficulty = issue.difficulty;
+	const repoName = issue.repo ?? "unknown";
+	const isAnalyzed = issue.analysisStatus === "done";
+	const isLoading = issue.analysisStatus === "analyzing";
+
 	return (
 		<motion.div
 			layout
@@ -30,15 +36,15 @@ export function IssueCard({
 			}`}
 		>
 			<div className="flex items-start gap-3 mb-3">
-				<MatchRing score={81} size={42} />
+				<MatchRing score={matchScore} size={42} isLoading={isLoading} />
 				<div className="flex-1 min-w-0">
 					<div className="flex items-center gap-2 mb-0.5">
 						<span className="font-mono text-[10px] text-muted-foreground">
-							REPO_NAME
+							{repoName}
 						</span>
 						<span className="flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/50">
 							<Star size={9} />
-							{(3 / 1000).toFixed(0)}k
+							{issue.labels.length > 0 ? issue.labels[0] : "—"}
 						</span>
 					</div>
 					<div className="pr-6 font-medium text-foreground group-hover:text-white text-sm leading-snug transition-colors">
@@ -57,7 +63,7 @@ export function IssueCard({
 				</button>
 			</div>
 			<div className="flex flex-wrap items-center gap-1.5">
-				<DifficultyBadge level={"High"} />
+				{isAnalyzed && difficulty && <DifficultyBadge level={difficulty} />}
 				{issue.labels.slice(0, 2).map((l) => (
 					<span
 						key={l}
@@ -73,7 +79,7 @@ export function IssueCard({
 					</span>
 					<span className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground/50">
 						<Clock size={9} />
-						{issue.opened}d
+						{issue.opened}
 					</span>
 				</div>
 			</div>

@@ -24,6 +24,10 @@ export type Issue = {
 	labels: string[];
 	comments: number;
 	opened: string;
+	repo?: string;
+	matchScore?: number;
+	difficulty?: "Low" | "Medium" | "High";
+	analysisStatus?: "idle" | "analyzing" | "done" | "error";
 };
 
 export type IssuesResponse = {
