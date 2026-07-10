@@ -45,7 +45,7 @@ export const Route = createFileRoute("/_dashboard/_layout/matches")({
 
 function RouteComponent() {
 	const { profile } = useProfile();
-	const { activeRepo, repos } = useRepos();
+	const { activeRepo, repos, loading: reposLoading } = useRepos();
 	const queryClient = useQueryClient();
 	const [selectedId, setSelectedId] = useState<number | null>(null);
 	const [repoFilter, setRepoFilter] = useState("all");
@@ -170,7 +170,7 @@ function RouteComponent() {
 			</Topbar>
 
 			{!activeRepo ? (
-				loading ? (
+				reposLoading ? (
 					<div className="flex flex-col justify-center items-center gap-3 flex-1 text-center">
 						<Loader2 size={22} className="text-primary animate-spin" />
 						<p className="font-mono text-[11px] text-muted-foreground">
