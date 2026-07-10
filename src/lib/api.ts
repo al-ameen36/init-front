@@ -41,18 +41,20 @@ export function fetchRepoMeta(owner: string, name: string): Promise<RepoMeta> {
 	return request<RepoMeta>(`/repo/${owner}/${name}`);
 }
 
-export function analyzeIssue(
+export function analyzeIssues(
 	repo: string,
-	issueNumber: number,
+	issueNumbers: number[],
 	profile?: DeveloperProfile | null,
-): Promise<AnalyzeIssueResponse> {
-	return request<AnalyzeIssueResponse>("/analyze/", {
+	force?: boolean,
+): Promise<AnalyzeIssueResponse[]> {
+	return request<AnalyzeIssueResponse[]>("/analyze/", {
 		method: "POST",
 		headers: { "content-type": "application/json" },
 		body: JSON.stringify({
 			repo,
-			issue_number: issueNumber,
+			issue_numbers: issueNumbers,
 			developer_profile: profile ?? null,
+			force: force ?? false,
 		}),
 	});
 }

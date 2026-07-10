@@ -1,4 +1,4 @@
-import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import {
@@ -11,31 +11,32 @@ import {
 	SlidersHorizontal,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { z } from "zod";
 import { DetailPanel } from "#/features/dashboard/components/DetailPanel";
 import { IssueCard } from "#/features/dashboard/components/IssueCard";
 import { Topbar } from "#/features/dashboard/components/Topbar";
 import type { AnalyzeIssueResponse, Issue } from "#/features/dashboard/types";
-import { analyzeIssue as callAnalyzeIssue, fetchIssues } from "#/lib/api";
+import { analyzeIssues as callAnalyzeIssues, fetchIssues } from "#/lib/api";
 import { useProfile } from "@/context/ProfileContext";
 import { useRepos } from "@/context/RepoContext";
 
 const SORT_OPTIONS = ["Best match", "Newest", "Most stars", "Most active"];
 
-const IssueSchema = z.object({
+const BatchSchema = z.object({
 	repo: z.string().min(1),
-	issueNumber: z.number().min(0),
+	issueNumbers: z.array(z.number().min(0)),
 	profile: z.object({}).passthrough().nullable().optional(),
+	force: z.boolean().optional(),
 });
 
-const analyzeIssue = createServerFn({ method: "POST" })
-	.validator(IssueSchema)
+const analyzeIssues = createServerFn({ method: "POST" })
+	.validator(BatchSchema)
 	.handler(
 		async ({
-			data: { repo, issueNumber, profile },
-		}): Promise<AnalyzeIssueResponse> => {
-			return callAnalyzeIssue(repo, issueNumber, profile);
+			data: { repo, issueNumbers, profile },
+		}): Promise<AnalyzeIssueResponse[]> => {
+			return callAnalyzeIssues(repo, issueNumbers, profile);
 		},
 	);
 
@@ -53,6 +54,7 @@ function RouteComponent() {
 	const [sort, setSort] = useState("Best match");
 	const [showSort, setShowSort] = useState(false);
 	const [search, setSearch] = useState("");
+	const forceRef = useRef(false);
 
 	const profileKey = profile?.username ?? "anon";
 
@@ -69,39 +71,41 @@ function RouteComponent() {
 
 	const issues = issuesData?.issues ?? [];
 
-	// One analysis query per issue, cached by repo + issue + profile.
-	const analysisQueries = useQueries({
-		queries: issues.map((issue) => ({
-			queryKey: ["analyze", activeRepo, issue.number, profileKey],
-			queryFn: () =>
-				analyzeIssue({
-					data: {
-						repo: activeRepo as string,
-						issueNumber: issue.number,
-						profile,
-					},
-				}),
-			enabled: !!activeRepo,
-		})),
+	// One batched analysis request for the whole page, cached by repo + profile.
+	const {
+		data: analysisList,
+		isLoading: analysisLoading,
+		isError: analysisError,
+	} = useQuery({
+		queryKey: ["analyze-batch", activeRepo, profileKey],
+		queryFn: async () => {
+			const result = await analyzeIssues({
+				data: {
+					repo: activeRepo as string,
+					issueNumbers: issues.map((i) => i.number),
+					profile,
+					force: forceRef.current,
+				},
+			});
+			forceRef.current = false;
+			return result;
+		},
+		enabled: !!activeRepo && issues.length > 0,
 	});
 
 	const analysisMap = new Map<number, AnalyzeIssueResponse>();
-	issues.forEach((issue, i) => {
-		const data = analysisQueries[i]?.data;
-		if (data) analysisMap.set(issue.number, data);
-	});
+	for (const a of analysisList ?? []) analysisMap.set(a.number, a);
 
 	// Merge analysis results onto each issue for rendering.
-	const displayIssues: Issue[] = issues.map((issue, i) => {
-		const q = analysisQueries[i];
-		const data = q?.data;
+	const displayIssues: Issue[] = issues.map((issue) => {
+		const data = analysisMap.get(issue.number);
 		return {
 			...issue,
 			difficulty: data?.guide.difficulty,
 			matchScore: data?.matchScore,
-			analysisStatus: q?.isLoading
+			analysisStatus: analysisLoading
 				? "analyzing"
-				: q?.isError
+				: analysisError
 					? "error"
 					: data
 						? "done"
@@ -130,19 +134,18 @@ function RouteComponent() {
 		setSelectedId(issueNumber === selectedId ? null : issueNumber);
 	};
 
-	const handleRetry = () => {
-		if (selectedId != null) {
-			void queryClient.refetchQueries({
-				queryKey: ["analyze", activeRepo, selectedId, profileKey],
+	const handleRefresh = () => {
+		forceRef.current = true;
+		if (activeRepo) {
+			void queryClient.invalidateQueries({ queryKey: ["issues", activeRepo] });
+			void queryClient.invalidateQueries({
+				queryKey: ["analyze-batch", activeRepo, profileKey],
 			});
 		}
 	};
 
 	const selectedIdx = issues.findIndex((i) => i.number === selectedId);
-	const isAnalyzingSelected =
-		selectedIdx >= 0
-			? (analysisQueries[selectedIdx]?.isLoading ?? false)
-			: false;
+	const isAnalyzingSelected = selectedIdx >= 0 ? analysisLoading : false;
 
 	return (
 		<div className="flex flex-col h-full">
@@ -156,12 +159,7 @@ function RouteComponent() {
 			>
 				<button
 					type="button"
-					onClick={() => {
-						if (activeRepo)
-							void queryClient.invalidateQueries({
-								queryKey: ["issues", activeRepo],
-							});
-					}}
+					onClick={handleRefresh}
 					className="flex items-center gap-1.5 px-3 py-1.5 border border-border/60 hover:border-white/12 rounded-lg font-mono text-[11px] text-muted-foreground hover:text-foreground transition-colors"
 				>
 					<RefreshCw size={11} />
@@ -349,7 +347,7 @@ function RouteComponent() {
 											}
 											isAnalyzing={isAnalyzingSelected}
 											onClose={() => setSelectedId(null)}
-											onRetry={handleRetry}
+											onRetry={handleRefresh}
 										/>
 									</div>
 								</motion.div>
