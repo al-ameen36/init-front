@@ -1,9 +1,11 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-
+import { useState } from "react";
 import appCss from "#/styles/index.css?url";
 import { ProfileProvider } from "@/context/ProfileContext";
+import { RepoProvider } from "@/context/RepoContext";
 
 function NotFound() {
 	return (
@@ -53,13 +55,33 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+	const [queryClient] = useState(
+		() =>
+			new QueryClient({
+				defaultOptions: {
+					queries: {
+						// Cache across SPA navigation; a full page refresh resets
+						// the in-memory cache, so data is always fresh on reload.
+						staleTime: 5 * 60 * 1000,
+						gcTime: 10 * 60 * 1000,
+						refetchOnWindowFocus: false,
+						retry: 1,
+					},
+				},
+			}),
+	);
+
 	return (
 		<html lang="en">
 			<head>
 				<HeadContent />
 			</head>
 			<body>
-				<ProfileProvider>{children}</ProfileProvider>
+				<QueryClientProvider client={queryClient}>
+					<ProfileProvider>
+						<RepoProvider>{children}</RepoProvider>
+					</ProfileProvider>
+				</QueryClientProvider>
 				<TanStackDevtools
 					config={{
 						position: "bottom-right",

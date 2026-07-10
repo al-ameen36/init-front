@@ -23,6 +23,24 @@ export function fetchIssues(repo: string): Promise<IssuesResponse> {
 	return request<IssuesResponse>(`/issues/${repo}`);
 }
 
+export type RepoMeta = {
+	owner: string;
+	name: string;
+	full_name: string;
+	description: string | null;
+	language: string | null;
+	stars: number;
+	forks: number;
+	open_issues_count: number;
+	html_url: string | null;
+	pushed_at: string | null;
+	topics: string[];
+};
+
+export function fetchRepoMeta(owner: string, name: string): Promise<RepoMeta> {
+	return request<RepoMeta>(`/repo/${owner}/${name}`);
+}
+
 export function analyzeIssue(
 	repo: string,
 	issueNumber: number,

@@ -8,7 +8,8 @@ import {
 	Settings,
 	Terminal,
 } from "lucide-react";
-import type { AddedRepo, NavId } from "#/features/dashboard/types";
+import type { NavId } from "#/features/dashboard/types";
+import type { RepoItem } from "@/context/RepoContext";
 import { useAuth } from "@/hooks/useAuth";
 
 const NAV: { id: NavId; icon: React.ElementType; label: string }[] = [
@@ -31,7 +32,7 @@ export function Sidebar({
 }: {
 	active: NavId;
 	setActive: (v: NavId) => void;
-	addedRepos: AddedRepo[];
+	addedRepos: RepoItem[];
 }) {
 	const { user, signOut } = useAuth();
 

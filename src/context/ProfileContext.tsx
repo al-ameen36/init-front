@@ -3,8 +3,6 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { DeveloperProfile } from "@/features/onboarding/components/data";
 import { supabase } from "@/lib/supabase";
 
-const STORAGE_KEY = "dev_profile";
-
 type ProfileContextValue = {
 	profile: DeveloperProfile | null;
 	loading: boolean;
@@ -75,14 +73,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 		let cancelled = false;
 
 		(async () => {
-			// Hydrate from localStorage immediately for instant UI.
-			try {
-				const raw = localStorage.getItem(STORAGE_KEY);
-				if (raw && !cancelled) setProfileState(JSON.parse(raw));
-			} catch {
-				// ignore malformed cache
-			}
-
 			// Hydrate from Supabase when authenticated.
 			const {
 				data: { user },
@@ -106,11 +96,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
 	const setProfile = (next: DeveloperProfile) => {
 		setProfileState(next);
-		try {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-		} catch {
-			// ignore quota / unavailable storage
-		}
 		supabase.auth.getUser().then(({ data: { user } }) => {
 			if (!user) return;
 			supabase
@@ -124,11 +109,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
 	const clearProfile = () => {
 		setProfileState(null);
-		try {
-			localStorage.removeItem(STORAGE_KEY);
-		} catch {
-			// ignore
-		}
 	};
 
 	return (
