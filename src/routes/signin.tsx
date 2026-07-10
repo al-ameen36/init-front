@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const RECENT = [
 	{ repo: "vercel/swr", action: "Issue matched", score: 96, timeAgo: "2h ago" },
@@ -31,11 +32,17 @@ export const Route = createFileRoute("/signin")({
 
 function RouteComponent() {
 	const navigate = useNavigate();
-	const [loading, setLoading] = useState(false);
+	const { signInWithGitHub, loading } = useAuth();
+	const [authLoading, setAuthLoading] = useState(false);
 
-	const handleConnect = () => {
-		setLoading(true);
-		setTimeout(() => navigate({ to: "/matches" }), 1200);
+	const handleConnect = async () => {
+		setAuthLoading(true);
+		try {
+			await signInWithGitHub();
+		} catch (error) {
+			console.error("GitHub auth failed:", error);
+			setAuthLoading(false);
+		}
 	};
 
 	return (
@@ -187,10 +194,10 @@ function RouteComponent() {
 					<button
 						type="button"
 						onClick={handleConnect}
-						disabled={loading}
+						disabled={authLoading || loading}
 						className="flex justify-center items-center gap-3 bg-foreground hover:bg-foreground/90 disabled:opacity-70 py-3.5 rounded-xl w-full font-medium text-background text-sm transition-all"
 					>
-						{loading ? (
+						{authLoading || loading ? (
 							<>
 								<motion.div
 									animate={{ rotate: 360 }}
@@ -201,7 +208,7 @@ function RouteComponent() {
 									}}
 									className="border-2 border-background/30 border-t-background rounded-full w-4 h-4"
 								/>
-								Connecting…
+								Connecting to GitHub&hellip;
 							</>
 						) : (
 							<>
@@ -240,17 +247,17 @@ function RouteComponent() {
 						))}
 					</div>
 
-					<p className="mt-10 text-[11px] text-muted-foreground/50 text-center">
+					<p className="mt-8 text-[11px] text-muted-foreground/50 text-center">
 						By continuing you agree to our{" "}
 						<a
-							href="www.google.com/terms"
+							href="https://google.com/terms"
 							className="hover:text-muted-foreground underline transition-colors"
 						>
 							Terms
 						</a>{" "}
 						and{" "}
 						<a
-							href="www.google.com/privacy"
+							href="https://google.com/privacy"
 							className="hover:text-muted-foreground underline transition-colors"
 						>
 							Privacy Policy

@@ -11,12 +11,13 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const PERMISSIONS = [
 	{
 		icon: GitPullRequest,
 		label: "Read pull requests and issues",
-		detail: "To analyze your contribution patterns",
+		detail: "To find matching opportunities",
 	},
 	{
 		icon: Star,
@@ -36,13 +37,17 @@ export const Route = createFileRoute("/signup")({
 
 function RouteComponent() {
 	const navigate = useNavigate();
-	const [loading, setLoading] = useState(false);
+	const { signInWithGitHub, loading } = useAuth();
+	const [authLoading, setAuthLoading] = useState(false);
 
-	const handleConnect = () => {
-		setLoading(true);
-		setTimeout(() => {
-			navigate({ to: "/onboarding" });
-		}, 1200);
+	const handleConnect = async () => {
+		setAuthLoading(true);
+		try {
+			await signInWithGitHub();
+		} catch (error) {
+			console.error("GitHub auth failed:", error);
+			setAuthLoading(false);
+		}
 	};
 
 	return (
@@ -191,10 +196,10 @@ function RouteComponent() {
 					<button
 						type="button"
 						onClick={handleConnect}
-						disabled={loading}
+						disabled={authLoading || loading}
 						className="flex justify-center items-center gap-3 bg-foreground hover:bg-foreground/90 disabled:opacity-70 py-3.5 rounded-xl w-full font-medium text-background text-sm transition-all"
 					>
-						{loading ? (
+						{authLoading || loading ? (
 							<>
 								<motion.div
 									animate={{ rotate: 360 }}
@@ -205,7 +210,7 @@ function RouteComponent() {
 									}}
 									className="border-2 border-background/30 border-t-background rounded-full w-4 h-4"
 								/>
-								Connecting to GitHub…
+								Connecting to GitHub&hellip;
 							</>
 						) : (
 							<>

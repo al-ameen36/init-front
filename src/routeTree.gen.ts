@@ -13,6 +13,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as DashboardLayoutRouteImport } from './routes/_dashboard/_layout'
 import { Route as DashboardLayoutSkillsRouteImport } from './routes/_dashboard/_layout.skills'
 import { Route as DashboardLayoutReposRouteImport } from './routes/_dashboard/_layout.repos'
@@ -37,6 +38,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardLayoutRoute = DashboardLayoutRouteImport.update({
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/active': typeof DashboardLayoutActiveRoute
   '/matches': typeof DashboardLayoutMatchesRoute
   '/repos': typeof DashboardLayoutReposRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/active': typeof DashboardLayoutActiveRoute
   '/matches': typeof DashboardLayoutMatchesRoute
   '/repos': typeof DashboardLayoutReposRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/_dashboard/_layout': typeof DashboardLayoutRouteWithChildren
+  '/auth/callback': typeof AuthCallbackRoute
   '/_dashboard/_layout/active': typeof DashboardLayoutActiveRoute
   '/_dashboard/_layout/matches': typeof DashboardLayoutMatchesRoute
   '/_dashboard/_layout/repos': typeof DashboardLayoutReposRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/signin'
     | '/signup'
+    | '/auth/callback'
     | '/active'
     | '/matches'
     | '/repos'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/signin'
     | '/signup'
+    | '/auth/callback'
     | '/active'
     | '/matches'
     | '/repos'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/signup'
     | '/_dashboard/_layout'
+    | '/auth/callback'
     | '/_dashboard/_layout/active'
     | '/_dashboard/_layout/matches'
     | '/_dashboard/_layout/repos'
@@ -136,6 +148,7 @@ export interface RootRouteChildren {
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
   DashboardLayoutRoute: typeof DashboardLayoutRouteWithChildren
+  AuthCallbackRoute: typeof AuthCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -166,6 +179,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_dashboard/_layout': {
@@ -230,6 +250,7 @@ const rootRouteChildren: RootRouteChildren = {
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,
   DashboardLayoutRoute: DashboardLayoutRouteWithChildren,
+  AuthCallbackRoute: AuthCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

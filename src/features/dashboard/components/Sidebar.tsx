@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
 	ArrowRight,
 	BarChart3,
@@ -8,8 +8,8 @@ import {
 	Settings,
 	Terminal,
 } from "lucide-react";
-import { USER } from "../data";
-import type { AddedRepo, NavId } from "../types";
+import type { AddedRepo, NavId } from "#/features/dashboard/types";
+import { useAuth } from "@/hooks/useAuth";
 
 const NAV: { id: NavId; icon: React.ElementType; label: string }[] = [
 	{ id: "matches", icon: Compass, label: "Matches" },
@@ -17,6 +17,12 @@ const NAV: { id: NavId; icon: React.ElementType; label: string }[] = [
 	{ id: "active", icon: GitPullRequest, label: "Active" },
 	{ id: "skills", icon: BarChart3, label: "Skills" },
 ];
+
+interface User {
+	name: string;
+	handle: string;
+	avatar: string;
+}
 
 export function Sidebar({
 	active,
@@ -27,7 +33,31 @@ export function Sidebar({
 	setActive: (v: NavId) => void;
 	addedRepos: AddedRepo[];
 }) {
-	const navigate = useNavigate();
+	const { user, signOut } = useAuth();
+
+	const userData: User = user
+		? {
+				name:
+					user.user_metadata?.full_name || user.user_metadata?.name || "User",
+				handle:
+					user.user_metadata?.github_username ||
+					user.user_metadata?.preferred_username ||
+					"github",
+				avatar:
+					user.user_metadata?.avatar_url ||
+					user.user_metadata?.picture ||
+					`https://github.com/${user.user_metadata?.github_username || "user"}.png`,
+			}
+		: {
+				name: "User",
+				handle: "github",
+				avatar: "",
+			};
+
+	const handleSignOut = async () => {
+		await signOut();
+	};
+
 	return (
 		<aside className="top-0 bottom-0 left-0 z-40 fixed flex flex-col bg-background border-border border-r w-[220px]">
 			<div className="flex items-center gap-2 px-5 py-5 border-border border-b">
@@ -42,24 +72,6 @@ export function Sidebar({
 
 			<nav className="flex-1 space-y-0.5 px-3 py-4">
 				{NAV.map(({ id, icon: Icon, label }) => (
-					// <button
-					// 	type="button"
-					// 	key={id}
-					// 	onClick={() => setActive(id)}
-					// 	className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
-					// 		active === id
-					// 			? "bg-primary/12 text-primary"
-					// 			: "text-muted-foreground hover:text-foreground hover:bg-white/4"
-					// 	}`}
-					// >
-					// 	<Icon size={16} />
-					// 	{label}
-					// 	{id === "repos" && addedRepos.length > 0 && (
-					// 		<span className="bg-white/6 ml-auto px-1.5 py-0.5 rounded font-mono text-[10px] text-muted-foreground">
-					// 			{addedRepos.length}
-					// 		</span>
-					// 	)}
-					// </button>
 					<Link
 						to={`/${id}`}
 						key={id}
@@ -91,7 +103,7 @@ export function Sidebar({
 				</button>
 				<button
 					type="button"
-					onClick={() => navigate({ to: "/" })}
+					onClick={handleSignOut}
 					className="flex items-center gap-3 hover:bg-white/4 px-3 py-2.5 rounded-lg w-full text-muted-foreground hover:text-foreground text-sm transition-all"
 				>
 					<ArrowRight size={16} className="rotate-180" />
@@ -101,16 +113,16 @@ export function Sidebar({
 
 			<div className="flex items-center gap-3 px-4 py-4 border-border border-t">
 				<img
-					src={USER.avatar}
-					alt={USER.name}
+					src={userData.avatar}
+					alt={userData.name}
 					className="border border-border rounded-full w-8 h-8 object-cover shrink-0"
 				/>
 				<div className="min-w-0">
 					<div className="font-medium text-foreground text-xs truncate">
-						{USER.name}
+						{userData.name}
 					</div>
 					<div className="font-mono text-[10px] text-muted-foreground">
-						@{USER.handle}
+						@{userData.handle}
 					</div>
 				</div>
 			</div>
