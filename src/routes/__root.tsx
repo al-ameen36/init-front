@@ -3,6 +3,7 @@ import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
 import appCss from "#/styles/index.css?url";
+import { ProfileProvider } from "@/context/ProfileContext";
 
 function NotFound() {
 	return (
@@ -40,6 +41,11 @@ export const Route = createRootRoute({
 				rel: "stylesheet",
 				href: appCss,
 			},
+			{
+				rel: "icon",
+				type: "image/x-icon",
+				href: "/favicon.ico",
+			},
 		],
 	}),
 	shellComponent: RootDocument,
@@ -53,7 +59,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body>
-				{children}
+				<ProfileProvider>{children}</ProfileProvider>
 				<TanStackDevtools
 					config={{
 						position: "bottom-right",

@@ -60,14 +60,8 @@ export function Sidebar({
 
 	return (
 		<aside className="top-0 bottom-0 left-0 z-40 fixed flex flex-col bg-background border-border border-r w-[220px]">
-			<div className="flex items-center gap-2 px-5 py-5 border-border border-b">
-				<div className="flex justify-center items-center bg-primary rounded-md w-7 h-7 shrink-0">
-					<Terminal size={13} className="text-white" />
-				</div>
-				<span className="font-mono font-medium text-foreground">init</span>
-				<span className="font-mono text-[10px] text-muted-foreground">
-					.dev
-				</span>
+			<div className="flex items-center px-5 py-5 border-border border-b">
+				<img src="/logo512.png" alt="init.dev" className="h-7 w-auto" />
 			</div>
 
 			<nav className="flex-1 space-y-0.5 px-3 py-4">

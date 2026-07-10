@@ -19,6 +19,7 @@ import type {
 	IssuesResponse,
 } from "#/features/dashboard/types";
 import { analyzeIssue as callAnalyzeIssue, fetchIssues } from "#/lib/api";
+import { useProfile } from "@/context/ProfileContext";
 
 const SORT_OPTIONS = ["Best match", "Newest", "Most stars", "Most active"];
 const tempRepo = "psf/requests";
@@ -32,13 +33,16 @@ const fetchPopularIssues = createServerFn().handler(
 const IssueSchema = z.object({
 	repo: z.string().min(1),
 	issueNumber: z.number().min(0),
+	profile: z.object({}).passthrough().nullable().optional(),
 });
 
 const analyzeIssue = createServerFn({ method: "POST" })
 	.validator(IssueSchema)
 	.handler(
-		async ({ data: { repo, issueNumber } }): Promise<AnalyzeIssueResponse> => {
-			return callAnalyzeIssue(repo, issueNumber);
+		async ({
+			data: { repo, issueNumber, profile },
+		}): Promise<AnalyzeIssueResponse> => {
+			return callAnalyzeIssue(repo, issueNumber, profile);
 		},
 	);
 
@@ -58,6 +62,7 @@ export const Route = createFileRoute("/_dashboard/_layout/matches")({
 
 function RouteComponent() {
 	const { issues: initialIssues } = Route.useLoaderData();
+	const { profile } = useProfile();
 	const [selectedId, setSelectedId] = useState<number | null>(null);
 	const [repoFilter, setRepoFilter] = useState("all");
 	const [diffFilter, setDiffFilter] = useState("All");
@@ -91,7 +96,7 @@ function RouteComponent() {
 
 			setAnalyzing((prev) => new Set(prev).add(issue.number));
 			analyzeIssue({
-				data: { repo: tempRepo, issueNumber: issue.number },
+				data: { repo: tempRepo, issueNumber: issue.number, profile },
 			})
 				.then((data) => {
 					if (signal.aborted) return;
@@ -136,7 +141,7 @@ function RouteComponent() {
 		return () => {
 			controller.abort();
 		};
-	}, [initialIssues]);
+	}, [initialIssues, profile]);
 
 	const repoOptions = ["all"];
 
@@ -170,7 +175,7 @@ function RouteComponent() {
 		setAnalyzing((prev) => new Set(prev).add(issueNumber));
 		try {
 			const data = await analyzeIssue({
-				data: { repo: tempRepo, issueNumber },
+				data: { repo: tempRepo, issueNumber, profile },
 			});
 
 			setAnalysisCache((prev) => {

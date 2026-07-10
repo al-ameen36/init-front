@@ -2,6 +2,7 @@ import type {
 	AnalyzeIssueResponse,
 	IssuesResponse,
 } from "#/features/dashboard/types";
+import type { DeveloperProfile } from "@/features/onboarding/components/data";
 
 export const SERVER_URL = process.env.SERVER_URL || "http://localhost:8000";
 
@@ -25,11 +26,16 @@ export function fetchIssues(repo: string): Promise<IssuesResponse> {
 export function analyzeIssue(
 	repo: string,
 	issueNumber: number,
+	profile?: DeveloperProfile | null,
 ): Promise<AnalyzeIssueResponse> {
 	return request<AnalyzeIssueResponse>("/analyze/", {
 		method: "POST",
 		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ repo, issue_number: issueNumber }),
+		body: JSON.stringify({
+			repo,
+			issue_number: issueNumber,
+			developer_profile: profile ?? null,
+		}),
 	});
 }
 

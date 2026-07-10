@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, CircleDot, Loader2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { useProfile } from "@/context/ProfileContext";
 import { DevLivePanel } from "@/features/onboarding/components/DevLivePanel";
 import type { Phase } from "@/features/onboarding/components/data";
 import { useOnboardingAnalysis } from "@/hooks/useOnboardingAnalysis";
@@ -11,6 +12,11 @@ const STEP_DWELL_MS = 700;
 export function OnboardingView() {
 	const navigate = useNavigate();
 	const { profile, loading, phaseIndex, error } = useOnboardingAnalysis();
+	const { setProfile } = useProfile();
+
+	useEffect(() => {
+		if (profile) setProfile(profile);
+	}, [profile, setProfile]);
 
 	const [displayPhase, setDisplayPhase] = useState(0);
 	useEffect(() => {
