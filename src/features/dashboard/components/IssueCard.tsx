@@ -1,4 +1,10 @@
-import { BookmarkIcon, Clock, MessageSquare, Star } from "lucide-react";
+import {
+	AlertTriangle,
+	BookmarkIcon,
+	Clock,
+	MessageSquare,
+	Star,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { DifficultyBadge } from "../../../components/DifficultyBadge";
 import { MatchRing } from "../../../components/MatchRing";
@@ -20,6 +26,7 @@ export function IssueCard({
 	const repoName = issue.repo ?? "unknown";
 	const isAnalyzed = issue.analysisStatus === "done";
 	const isLoading = issue.analysisStatus === "analyzing";
+	const isError = issue.analysisStatus === "error";
 
 	return (
 		<motion.div
@@ -46,6 +53,12 @@ export function IssueCard({
 							<Star size={9} />
 							{issue.labels.length > 0 ? issue.labels[0] : "—"}
 						</span>
+						{isError && (
+							<span className="flex items-center gap-1 font-mono text-[10px] text-destructive/80">
+								<AlertTriangle size={9} />
+								Analysis failed
+							</span>
+						)}
 					</div>
 					<div className="pr-6 font-medium text-foreground group-hover:text-white text-sm leading-snug transition-colors">
 						{issue.title}

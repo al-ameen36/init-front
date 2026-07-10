@@ -1,9 +1,11 @@
 import {
+	AlertCircle,
 	ArrowRight,
 	Code2,
 	ExternalLink,
 	FileCode,
 	ListChecks,
+	RefreshCw,
 	X,
 	Zap,
 } from "lucide-react";
@@ -16,22 +18,92 @@ export function DetailPanel({
 	basicIssue,
 	isAnalyzing,
 	onClose,
+	onRetry,
 }: {
 	issue: AnalyzeIssueResponse | null;
 	basicIssue: Issue | null;
 	isAnalyzing: boolean;
 	onClose: () => void;
+	onRetry?: () => void;
 }) {
+	const isError = basicIssue?.analysisStatus === "error";
 	const repo = issue?.repo ?? basicIssue?.repo ?? "unknown";
 	const title = issue?.title ?? basicIssue?.title ?? "Loading…";
 	const language = issue?.language ?? "Unknown";
-	const matchScore = issue?.matchScore ?? 0;
-	const difficulty = issue?.guide?.difficulty ?? "Medium";
+	const matchScore = issue?.matchScore;
+	const difficulty = issue?.guide?.difficulty;
 	const comments = issue?.guide?.comments ?? basicIssue?.comments ?? 0;
 	const opened = issue?.guide?.opened ?? basicIssue?.opened ?? "—";
 	const summary = issue?.guide?.summary ?? "Analysis in progress…";
 	const relevantFiles = issue?.guide?.relevant_files ?? [];
 	const investigationPath = issue?.guide?.investigation_path ?? [];
+
+	if (isError) {
+		return (
+			<motion.div
+				key={basicIssue?.number ?? "error"}
+				initial={{ opacity: 0, x: 20 }}
+				animate={{ opacity: 1, x: 0 }}
+				exit={{ opacity: 0, x: 20 }}
+				transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+				className="flex flex-col h-full"
+			>
+				<div className="flex items-start gap-3 px-6 py-4 border-border border-b">
+					<div className="flex-1 min-w-0">
+						<div className="flex items-center gap-2 mb-1 font-mono text-[10px] text-muted-foreground">
+							{repo}
+							<span className="px-1.5 py-0.5 border border-border/50 rounded text-[9px]">
+								{language}
+							</span>
+						</div>
+						<h2 className="font-medium text-foreground text-sm leading-snug">
+							{title}
+						</h2>
+					</div>
+					<button
+						type="button"
+						onClick={onClose}
+						className="hover:bg-white/5 p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors shrink-0"
+					>
+						<X size={15} />
+					</button>
+				</div>
+
+				<div className="flex-1 flex items-center justify-center px-6 py-8">
+					<div className="text-center space-y-4 max-w-sm">
+						<AlertCircle
+							size={48}
+							className="text-destructive/60 mx-auto shrink-0"
+						/>
+						<div className="space-y-1">
+							<h3 className="font-medium text-foreground text-base">
+								Analysis failed
+							</h3>
+							<p className="text-muted-foreground text-sm">
+								Unable to analyze this issue. The repository might be private,
+								rate limited, or temporarily unavailable.
+							</p>
+						</div>
+						{onRetry && (
+							<button
+								type="button"
+								onClick={onRetry}
+								className="flex items-center gap-2 mx-auto bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+							>
+								<RefreshCw size={14} />
+								Retry analysis
+							</button>
+						)}
+						<div className="flex justify-center items-center gap-2 bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 py-2.5 rounded-lg w-full font-medium text-primary-foreground text-sm transition-all">
+							Open on GitHub <ArrowRight size={13} />
+						</div>
+					</div>
+				</div>
+
+				<div className="space-y-2 px-6 py-4 border-border border-t" />
+			</motion.div>
+		);
+	}
 
 	return (
 		<motion.div
@@ -73,11 +145,11 @@ export function DetailPanel({
 						<div className="mt-0.5 font-mono text-[10px] text-muted-foreground">
 							{isAnalyzing
 								? "Analyzing…"
-								: matchScore >= 90
+								: matchScore !== undefined && matchScore >= 90
 									? "Excellent fit"
-									: matchScore >= 80
+									: matchScore !== undefined && matchScore >= 80
 										? "Strong fit"
-										: matchScore > 0
+										: matchScore !== undefined && matchScore > 0
 											? "Good fit"
 											: "—"}
 						</div>
@@ -88,12 +160,16 @@ export function DetailPanel({
 					{[
 						{
 							label: "Difficulty",
-							value: isAnalyzing ? "—" : difficulty,
+							value: isAnalyzing ? "—" : (difficulty ?? "—"),
 							color: isAnalyzing
 								? "#a0aec8"
 								: difficulty === "Low"
 									? "#34d399"
-									: "#fbbf24",
+									: difficulty === "Medium"
+										? "#fbbf24"
+										: difficulty === "High"
+											? "#f87171"
+											: "#a0aec8",
 						},
 						{
 							label: "Comments",

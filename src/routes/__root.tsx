@@ -4,6 +4,23 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
 import appCss from "#/styles/index.css?url";
 
+function NotFound() {
+	return (
+		<div className="flex h-screen items-center justify-center bg-background text-foreground">
+			<div className="text-center space-y-4">
+				<h1 className="font-mono text-6xl font-bold">404</h1>
+				<p className="text-muted-foreground text-lg">Page not found</p>
+				<a
+					href="/"
+					className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+				>
+					Go home
+				</a>
+			</div>
+		</div>
+	);
+}
+
 export const Route = createRootRoute({
 	head: () => ({
 		meta: [
@@ -15,7 +32,7 @@ export const Route = createRootRoute({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "TanStack Start Starter",
+				title: "init.dev",
 			},
 		],
 		links: [
@@ -26,6 +43,7 @@ export const Route = createRootRoute({
 		],
 	}),
 	shellComponent: RootDocument,
+	notFoundComponent: NotFound,
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {

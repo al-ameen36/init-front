@@ -112,11 +112,17 @@ export function Sidebar({
 			</div>
 
 			<div className="flex items-center gap-3 px-4 py-4 border-border border-t">
-				<img
-					src={userData.avatar}
-					alt={userData.name}
-					className="border border-border rounded-full w-8 h-8 object-cover shrink-0"
-				/>
+				{userData.avatar ? (
+					<img
+						src={userData.avatar}
+						alt={userData.name}
+						className="border border-border rounded-full w-8 h-8 object-cover shrink-0"
+					/>
+				) : (
+					<div className="flex items-center justify-center bg-primary/10 border border-border rounded-full w-8 h-8 shrink-0">
+						<Terminal size={12} className="text-primary" />
+					</div>
+				)}
 				<div className="min-w-0">
 					<div className="font-medium text-foreground text-xs truncate">
 						{userData.name}

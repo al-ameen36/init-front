@@ -26,7 +26,7 @@ export function analyzeIssue(
 	repo: string,
 	issueNumber: number,
 ): Promise<AnalyzeIssueResponse> {
-	return request<AnalyzeIssueResponse>("/analyze", {
+	return request<AnalyzeIssueResponse>("/analyze/", {
 		method: "POST",
 		headers: { "content-type": "application/json" },
 		body: JSON.stringify({ repo, issue_number: issueNumber }),

@@ -8,7 +8,7 @@ import {
 	SlidersHorizontal,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { DetailPanel } from "#/features/dashboard/components/DetailPanel";
 import { IssueCard } from "#/features/dashboard/components/IssueCard";
@@ -71,64 +71,72 @@ function RouteComponent() {
 	>(new Map());
 	const [analyzing, setAnalyzing] = useState<Set<number>>(new Set());
 
+	// Tracks issue numbers already kicked off by the auto-analyze effect so we
+	// never re-request (and never infinitely retry) a completed or failed issue.
+	const startedRef = useRef<Set<number>>(new Set());
+
 	useEffect(() => {
 		setIssues(initialIssues);
+		// Reset the guard when a fresh set of issues is loaded.
+		startedRef.current = new Set();
 	}, [initialIssues]);
 
 	useEffect(() => {
 		const controller = new AbortController();
+		const signal = controller.signal;
 
 		initialIssues.forEach((issue) => {
-			if (!analysisCache.has(issue.number) && !analyzing.has(issue.number)) {
-				setAnalyzing((prev) => new Set(prev).add(issue.number));
-				analyzeIssue({
-					data: { repo: tempRepo, issueNumber: issue.number },
-				})
-					.then((data) => {
-						if (controller.signal.aborted) return;
-						setAnalysisCache((prev) => {
-							const next = new Map(prev);
-							next.set(issue.number, data);
-							return next;
-						});
-						setIssues((prev) =>
-							prev.map((i) =>
-								i.number === issue.number
-									? {
-											...i,
-											difficulty: data.guide.difficulty,
-											matchScore: data.matchScore,
-											analysisStatus: "done" as const,
-										}
-									: i,
-							),
-						);
-					})
-					.catch(() => {
-						if (controller.signal.aborted) return;
-						setIssues((prev) =>
-							prev.map((i) =>
-								i.number === issue.number
-									? { ...i, analysisStatus: "error" as const }
-									: i,
-							),
-						);
-					})
-					.finally(() => {
-						if (controller.signal.aborted) return;
-						setAnalyzing((prev) => {
-							const next = new Set(prev);
-							next.delete(issue.number);
-							return next;
-						});
+			if (startedRef.current.has(issue.number)) return;
+			startedRef.current.add(issue.number);
+
+			setAnalyzing((prev) => new Set(prev).add(issue.number));
+			analyzeIssue({
+				data: { repo: tempRepo, issueNumber: issue.number },
+			})
+				.then((data) => {
+					if (signal.aborted) return;
+					setAnalysisCache((prev) => {
+						const next = new Map(prev);
+						next.set(issue.number, data);
+						return next;
 					});
-			}
+					setIssues((prev) =>
+						prev.map((i) =>
+							i.number === issue.number
+								? {
+										...i,
+										difficulty: data.guide.difficulty,
+										matchScore: data.matchScore,
+										analysisStatus: "done" as const,
+									}
+								: i,
+						),
+					);
+				})
+				.catch(() => {
+					if (signal.aborted) return;
+					setIssues((prev) =>
+						prev.map((i) =>
+							i.number === issue.number
+								? { ...i, analysisStatus: "error" as const }
+								: i,
+						),
+					);
+				})
+				.finally(() => {
+					if (signal.aborted) return;
+					setAnalyzing((prev) => {
+						const next = new Set(prev);
+						next.delete(issue.number);
+						return next;
+					});
+				});
 		});
 
 		return () => {
 			controller.abort();
 		};
-	}, [initialIssues, analysisCache, analyzing]);
+	}, [initialIssues]);
 
 	const repoOptions = ["all"];
 
@@ -343,6 +351,7 @@ function RouteComponent() {
 									}
 									isAnalyzing={analyzing.has(selectedId)}
 									onClose={() => setSelectedId(null)}
+									onRetry={() => handleAnalyze(selectedId)}
 								/>
 							</div>
 						</motion.div>
