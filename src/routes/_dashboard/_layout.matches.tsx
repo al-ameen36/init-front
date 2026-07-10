@@ -1,6 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import {
 	ChevronDown,
 	Filter,
@@ -12,33 +11,15 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRef, useState } from "react";
-import { z } from "zod";
 import { DetailPanel } from "#/features/dashboard/components/DetailPanel";
 import { IssueCard } from "#/features/dashboard/components/IssueCard";
 import { Topbar } from "#/features/dashboard/components/Topbar";
 import type { AnalyzeIssueResponse, Issue } from "#/features/dashboard/types";
-import { analyzeIssues as callAnalyzeIssues, fetchIssues } from "#/lib/api";
+import { analyzeIssuesStream, fetchIssues } from "#/lib/api";
 import { useProfile } from "@/context/ProfileContext";
 import { useRepos } from "@/context/RepoContext";
 
 const SORT_OPTIONS = ["Best match", "Newest", "Most stars", "Most active"];
-
-const BatchSchema = z.object({
-	repo: z.string().min(1),
-	issueNumbers: z.array(z.number().min(0)),
-	profile: z.object({}).passthrough().nullable().optional(),
-	force: z.boolean().optional(),
-});
-
-const analyzeIssues = createServerFn({ method: "POST" })
-	.validator(BatchSchema)
-	.handler(
-		async ({
-			data: { repo, issueNumbers, profile },
-		}): Promise<AnalyzeIssueResponse[]> => {
-			return callAnalyzeIssues(repo, issueNumbers, profile);
-		},
-	);
 
 export const Route = createFileRoute("/_dashboard/_layout/matches")({
 	component: RouteComponent,
@@ -55,6 +36,10 @@ function RouteComponent() {
 	const [showSort, setShowSort] = useState(false);
 	const [search, setSearch] = useState("");
 	const forceRef = useRef(false);
+	const [streamed, setStreamed] = useState<
+		Record<number, AnalyzeIssueResponse>
+	>({});
+	const [buildStatus, setBuildStatus] = useState<string | null>(null);
 
 	const profileKey = profile?.username ?? "anon";
 
@@ -71,44 +56,62 @@ function RouteComponent() {
 
 	const issues = issuesData?.issues ?? [];
 
-	// One batched analysis request for the whole page, cached by repo + profile.
-	const {
-		data: analysisList,
-		isLoading: analysisLoading,
-		isError: analysisError,
-	} = useQuery({
+	// One streaming analysis pass for the whole page, cached by repo + profile.
+	// Each issue's result is painted the moment it finishes (SSE), so the user
+	// never waits for the full batch.
+	const { isLoading: analysisLoading, isError: analysisError } = useQuery({
 		queryKey: ["analyze-batch", activeRepo, profileKey],
 		queryFn: async () => {
-			const result = await analyzeIssues({
-				data: {
-					repo: activeRepo as string,
-					issueNumbers: issues.map((i) => i.number),
-					profile,
+			const collected: Record<number, AnalyzeIssueResponse> = {};
+			setStreamed({});
+			setBuildStatus(null);
+			await analyzeIssuesStream(
+				activeRepo as string,
+				issues.map((i) => i.number),
+				profile,
+				{
 					force: forceRef.current,
+					onEvent: (e) => {
+						if (e.type === "status") {
+							setBuildStatus(e.message);
+						} else if (e.type === "result") {
+							setBuildStatus(null);
+							collected[e.analysis.number] = e.analysis;
+							setStreamed((prev) => ({
+								...prev,
+								[e.analysis.number]: e.analysis,
+							}));
+						} else {
+							setBuildStatus(null);
+						}
+					},
 				},
-			});
+			);
+			setBuildStatus(null);
 			forceRef.current = false;
-			return result;
+			return collected;
 		},
 		enabled: !!activeRepo && issues.length > 0,
 	});
 
 	const analysisMap = new Map<number, AnalyzeIssueResponse>();
-	for (const a of analysisList ?? []) analysisMap.set(a.number, a);
+	for (const a of Object.values(streamed)) analysisMap.set(a.number, a);
 
-	// Merge analysis results onto each issue for rendering.
+	// Merge analysis results onto each issue for rendering. A card flips to
+	// "done" as soon as its own analysis streams in, independent of the rest of
+	// the batch still loading.
 	const displayIssues: Issue[] = issues.map((issue) => {
 		const data = analysisMap.get(issue.number);
 		return {
 			...issue,
 			difficulty: data?.guide.difficulty,
 			matchScore: data?.matchScore,
-			analysisStatus: analysisLoading
-				? "analyzing"
-				: analysisError
-					? "error"
-					: data
-						? "done"
+			analysisStatus: data
+				? "done"
+				: analysisLoading
+					? "analyzing"
+					: analysisError
+						? "error"
 						: "idle",
 		};
 	});
@@ -145,7 +148,10 @@ function RouteComponent() {
 	};
 
 	const selectedIdx = issues.findIndex((i) => i.number === selectedId);
-	const isAnalyzingSelected = selectedIdx >= 0 ? analysisLoading : false;
+	const selectedAnalysis =
+		selectedId != null ? (analysisMap.get(selectedId) ?? null) : null;
+	const isAnalyzingSelected =
+		selectedIdx >= 0 && analysisLoading && !selectedAnalysis;
 
 	return (
 		<div className="flex flex-col h-full">
@@ -296,7 +302,9 @@ function RouteComponent() {
 									<div className="mb-2 font-mono text-[11px] text-muted-foreground">
 										{error
 											? "Failed to load"
-											: `${filtered.length} result${filtered.length !== 1 ? "s" : ""}`}
+											: buildStatus
+												? buildStatus
+												: `${filtered.length} result${filtered.length !== 1 ? "s" : ""}`}
 									</div>
 									{error && (
 										<div className="py-8 text-center text-muted-foreground text-sm">
