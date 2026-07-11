@@ -3,7 +3,6 @@ import {
 	BookmarkIcon,
 	Clock,
 	MessageSquare,
-	Star,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { DifficultyBadge } from "../../../components/DifficultyBadge";
@@ -48,10 +47,6 @@ export function IssueCard({
 					<div className="flex items-center gap-2 mb-0.5">
 						<span className="font-mono text-[10px] text-muted-foreground">
 							{repoName}
-						</span>
-						<span className="flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/50">
-							<Star size={9} />
-							{issue.labels.length > 0 ? issue.labels[0] : "—"}
 						</span>
 						{isError && (
 							<span className="flex items-center gap-1 font-mono text-[10px] text-destructive/80">

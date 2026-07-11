@@ -19,7 +19,7 @@ import { analyzeIssuesStream, fetchIssues } from "#/lib/api";
 import { useProfile } from "@/context/ProfileContext";
 import { useRepos } from "@/context/RepoContext";
 
-const SORT_OPTIONS = ["Best match", "Newest", "Most stars", "Most active"];
+const SORT_OPTIONS = ["Best match", "Newest", "Most active"];
 
 type AnalyzeBatch = Record<number, AnalyzeIssueResponse>;
 
@@ -137,11 +137,13 @@ function RouteComponent() {
 		.filter((i) => {
 			if (search && !i.title.toLowerCase().includes(search.toLowerCase()))
 				return false;
+			if (diffFilter !== "All" && i.difficulty !== diffFilter) return false;
 			return true;
 		})
 		.sort((a, b) => {
 			if (sort === "Best match")
 				return (b.matchScore ?? 0) - (a.matchScore ?? 0);
+			if (sort === "Newest") return Date.parse(b.opened) - Date.parse(a.opened);
 			if (sort === "Most active") return b.comments - a.comments;
 			return 0;
 		});
@@ -232,21 +234,28 @@ function RouteComponent() {
 							/>
 						</div>
 
-						{/* Repo filter chips */}
-						{repoOptions.map((r) => (
-							<button
-								type="button"
-								key={r}
-								onClick={() => setRepoFilter(r)}
-								className={`font-mono text-[11px] px-2.5 py-1.5 rounded-md transition-colors ${
-									repoFilter === r
-										? "bg-primary/15 text-primary"
-										: "text-muted-foreground hover:text-foreground hover:bg-white/4"
-								}`}
-							>
-								{r === "all" ? "All repos" : r}
-							</button>
-						))}
+						{/* Repo label — with a single active repo this is just an
+						    indicator, not a filter, so it isn't clickable. */}
+						{repoOptions.length <= 1 ? (
+							<span className="font-mono text-[11px] px-2.5 py-1.5 rounded-md bg-primary/15 text-primary">
+								{repoOptions[0] === "all" ? "All repos" : repoOptions[0]}
+							</span>
+						) : (
+							repoOptions.map((r) => (
+								<button
+									type="button"
+									key={r}
+									onClick={() => setRepoFilter(r)}
+									className={`font-mono text-[11px] px-2.5 py-1.5 rounded-md transition-colors ${
+										repoFilter === r
+											? "bg-primary/15 text-primary"
+											: "text-muted-foreground hover:text-foreground hover:bg-white/4"
+									}`}
+								>
+									{r === "all" ? "All repos" : r}
+								</button>
+							))
+						)}
 
 						{repos.length > 0 && <div className="bg-border w-px h-4" />}
 
