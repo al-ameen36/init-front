@@ -31,6 +31,16 @@ function RouteComponent() {
 	const { profile } = useProfile();
 	const { activeRepo, repos, loading: reposLoading } = useRepos();
 	const queryClient = useQueryClient();
+	const profileKey = profile?.username ?? "anon";
+	const analyzeKey = ["analyze-batch", activeRepo, profileKey] as const;
+	const failedKey = ["analyze-failed", activeRepo, profileKey] as const;
+	type FailedState = { issues: Record<number, string>; batch: boolean };
+	// Re-hydrate failure state from the cache so it survives navigating away
+	// and back (the component unmounts, but React Query's cache persists).
+	const initialFailed = queryClient.getQueryData<FailedState>(failedKey) ?? {
+		issues: {},
+		batch: false,
+	};
 	const [selectedId, setSelectedId] = useState<number | null>(null);
 	const [repoFilter, setRepoFilter] = useState("all");
 	const [diffFilter, setDiffFilter] = useState("All");
@@ -41,9 +51,12 @@ function RouteComponent() {
 	const [buildStatus, setBuildStatus] = useState<string | null | undefined>(
 		null,
 	);
-
-	const profileKey = profile?.username ?? "anon";
-	const analyzeKey = ["analyze-batch", activeRepo, profileKey] as const;
+	// Per-issue analysis failures (backend emits `error` SSE events with a
+	// `number`); batch-level failures (no `number`) are tracked separately.
+	const [failedIssues, setFailedIssues] = useState<Record<number, string>>(
+		initialFailed.issues,
+	);
+	const [batchError, setBatchError] = useState(initialFailed.batch);
 
 	// Issues for the active repo (cached across navigation by React Query).
 	const {
@@ -77,6 +90,10 @@ function RouteComponent() {
 				queryClient.setQueryData<AnalyzeBatch>(analyzeKey, {});
 			}
 			setBuildStatus(null);
+			const resetFailed: FailedState = { issues: {}, batch: false };
+			setFailedIssues({});
+			setBatchError(false);
+			queryClient.setQueryData(failedKey, resetFailed);
 			await analyzeIssuesStream(
 				activeRepo as string,
 				issues.map((i) => i.number),
@@ -93,8 +110,31 @@ function RouteComponent() {
 								...(prev ?? {}),
 								[e.analysis.number]: e.analysis,
 							}));
-						} else {
-							setBuildStatus(null);
+						} else if (e.type === "error") {
+							// Backend streams `error` events then ends the stream;
+							// surface each so the UI can show "Analysis failed".
+							// Persist to the query cache so the state survives
+							// navigating away and back.
+							setBuildStatus(e.message);
+							if (typeof e.number === "number") {
+								setFailedIssues((prev) => {
+									const next = {
+										...prev,
+										[e.number as number]: e.message,
+									};
+									queryClient.setQueryData<FailedState>(failedKey, (cur) => ({
+										issues: next,
+										batch: cur?.batch ?? false,
+									}));
+									return next;
+								});
+							} else {
+								setBatchError(true);
+								queryClient.setQueryData<FailedState>(failedKey, (cur) => ({
+									issues: cur?.issues ?? {},
+									batch: true,
+								}));
+							}
 						}
 					},
 				},
@@ -123,11 +163,15 @@ function RouteComponent() {
 			matchScore: data?.matchScore,
 			analysisStatus: data
 				? "done"
-				: analysisLoading
-					? "analyzing"
-					: analysisError
+				: failedIssues[issue.number]
+					? "error"
+					: batchError
 						? "error"
-						: "idle",
+						: analysisLoading
+							? "analyzing"
+							: analysisError
+								? "error"
+								: "idle",
 		};
 	});
 
@@ -161,6 +205,7 @@ function RouteComponent() {
 			void queryClient.invalidateQueries({
 				queryKey: ["analyze-batch", activeRepo, profileKey],
 			});
+			queryClient.setQueryData(failedKey, { issues: {}, batch: false });
 		}
 	};
 
