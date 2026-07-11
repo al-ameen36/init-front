@@ -47,6 +47,7 @@ export type InvestigationGuide = {
 	summary: string;
 	relevant_files: string[];
 	investigation_path: string[];
+	required_skills: string[];
 };
 
 export type AnalyzeIssueResponse = {

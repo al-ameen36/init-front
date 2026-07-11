@@ -1,15 +1,20 @@
 import {
 	AlertCircle,
 	ArrowRight,
+	Check,
+	Circle,
 	Code2,
 	ExternalLink,
 	FileCode,
 	ListChecks,
 	RefreshCw,
+	Wrench,
 	X,
 	Zap,
 } from "lucide-react";
 import { motion } from "motion/react";
+import type { DeveloperProfile } from "@/features/onboarding/components/data";
+import { hasSkill } from "@/lib/skills";
 import { MatchRing } from "../../../components/MatchRing";
 import type { AnalyzeIssueResponse, Issue } from "../types";
 
@@ -19,12 +24,14 @@ export function DetailPanel({
 	isAnalyzing,
 	onClose,
 	onRetry,
+	profile,
 }: {
 	issue: AnalyzeIssueResponse | null;
 	basicIssue: Issue | null;
 	isAnalyzing: boolean;
 	onClose: () => void;
 	onRetry?: () => void;
+	profile: DeveloperProfile;
 }) {
 	const isError = basicIssue?.analysisStatus === "error";
 	const repo = issue?.repo ?? basicIssue?.repo ?? "unknown";
@@ -37,6 +44,7 @@ export function DetailPanel({
 	const summary = issue?.guide?.summary ?? "Analysis in progress…";
 	const relevantFiles = issue?.guide?.relevant_files ?? [];
 	const investigationPath = issue?.guide?.investigation_path ?? [];
+	const requiredSkills = issue?.guide?.required_skills ?? [];
 
 	if (isError) {
 		return (
@@ -204,6 +212,46 @@ export function DetailPanel({
 					<p className="text-foreground/75 text-xs leading-relaxed">
 						{summary}
 					</p>
+				</div>
+
+				<div>
+					<div className="flex items-center gap-1.5 mb-2.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
+						<Wrench size={9} />
+						Skills needed
+					</div>
+					{requiredSkills.length > 0 ? (
+						<div className="flex flex-wrap gap-1.5">
+							{requiredSkills.map((skill) => {
+								const have = hasSkill(skill, profile);
+								return (
+									<div
+										key={skill}
+										className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-[11px] ${
+											have
+												? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+												: "border-border bg-muted/20 text-muted-foreground"
+										}`}
+									>
+										{have ? (
+											<Check size={11} className="text-emerald-400 shrink-0" />
+										) : (
+											<Circle
+												size={11}
+												className="text-muted-foreground/50 shrink-0"
+											/>
+										)}
+										{skill}
+									</div>
+								);
+							})}
+						</div>
+					) : isAnalyzing ? (
+						<div className="text-muted-foreground text-xs">Loading…</div>
+					) : (
+						<div className="text-muted-foreground text-xs">
+							No skills identified
+						</div>
+					)}
 				</div>
 
 				<div>

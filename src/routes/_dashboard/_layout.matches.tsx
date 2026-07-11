@@ -335,7 +335,7 @@ function RouteComponent() {
 						</div>
 
 						<AnimatePresence>
-							{selectedId && (
+							{selectedId && profile && (
 								<motion.div
 									initial={{ width: 0, opacity: 0 }}
 									animate={{ width: 380, opacity: 1 }}
@@ -356,6 +356,7 @@ function RouteComponent() {
 											isAnalyzing={isAnalyzingSelected}
 											onClose={() => setSelectedId(null)}
 											onRetry={handleRefresh}
+											profile={profile}
 										/>
 									</div>
 								</motion.div>

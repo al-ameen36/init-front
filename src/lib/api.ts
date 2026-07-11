@@ -54,7 +54,7 @@ export type AnalyzeStreamOptions = {
 };
 
 /**
- * Streams analyses over SSE via a POST body. EventSource can't send a body, so
+ * Streams analysis over SSE via a POST body. EventSource can't send a body, so
  * we read the streamed response manually and emit each parsed event.
  */
 export async function analyzeIssuesStream(
