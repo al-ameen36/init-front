@@ -21,6 +21,8 @@ import { useRepos } from "@/context/RepoContext";
 
 const SORT_OPTIONS = ["Best match", "Newest", "Most stars", "Most active"];
 
+type AnalyzeBatch = Record<number, AnalyzeIssueResponse>;
+
 export const Route = createFileRoute("/_dashboard/_layout/matches")({
 	component: RouteComponent,
 });
@@ -36,12 +38,12 @@ function RouteComponent() {
 	const [showSort, setShowSort] = useState(false);
 	const [search, setSearch] = useState("");
 	const forceRef = useRef(false);
-	const [streamed, setStreamed] = useState<
-		Record<number, AnalyzeIssueResponse>
-	>({});
-	const [buildStatus, setBuildStatus] = useState<string | null>(null);
+	const [buildStatus, setBuildStatus] = useState<string | null | undefined>(
+		null,
+	);
 
 	const profileKey = profile?.username ?? "anon";
+	const analyzeKey = ["analyze-batch", activeRepo, profileKey] as const;
 
 	// Issues for the active repo (cached across navigation by React Query).
 	const {
@@ -58,12 +60,22 @@ function RouteComponent() {
 
 	// One streaming analysis pass for the whole page, cached by repo + profile.
 	// Each issue's result is painted the moment it finishes (SSE), so the user
-	// never waits for the full batch.
-	const { isLoading: analysisLoading, isError: analysisError } = useQuery({
-		queryKey: ["analyze-batch", activeRepo, profileKey],
+	// never waits for the full batch. Results are written into React Query's
+	// cache (both incrementally during streaming and as the final return), so
+	// they survive route navigation/remounts instead of being wiped.
+	const {
+		data: analysisData,
+		isLoading: analysisLoading,
+		isError: analysisError,
+	} = useQuery({
+		queryKey: analyzeKey,
 		queryFn: async () => {
-			const collected: Record<number, AnalyzeIssueResponse> = {};
-			setStreamed({});
+			const collected: AnalyzeBatch = {};
+			// Only clear the cache when actually (re)streaming; a stale cache
+			// hit (e.g. returning to the page) keeps showing prior results.
+			if (forceRef.current) {
+				queryClient.setQueryData<AnalyzeBatch>(analyzeKey, {});
+			}
 			setBuildStatus(null);
 			await analyzeIssuesStream(
 				activeRepo as string,
@@ -77,10 +89,13 @@ function RouteComponent() {
 						} else if (e.type === "result") {
 							setBuildStatus(null);
 							collected[e.analysis.number] = e.analysis;
-							setStreamed((prev) => ({
-								...prev,
-								[e.analysis.number]: e.analysis,
-							}));
+							queryClient.setQueryData<AnalyzeBatch>(
+								analyzeKey,
+								(prev) => ({
+									...(prev ?? {}),
+									[e.analysis.number]: e.analysis,
+								}),
+							);
 						} else {
 							setBuildStatus(null);
 						}
@@ -92,10 +107,13 @@ function RouteComponent() {
 			return collected;
 		},
 		enabled: !!activeRepo && issues.length > 0,
+		staleTime: 1000 * 60 * 5,
 	});
 
 	const analysisMap = new Map<number, AnalyzeIssueResponse>();
-	for (const a of Object.values(streamed)) analysisMap.set(a.number, a);
+	for (const a of Object.values(analysisData ?? {})) {
+		analysisMap.set(a.number, a);
+	}
 
 	// Merge analysis results onto each issue for rendering. A card flips to
 	// "done" as soon as its own analysis streams in, independent of the rest of
