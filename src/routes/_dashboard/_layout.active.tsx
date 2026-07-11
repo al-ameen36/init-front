@@ -48,7 +48,7 @@ function RouteComponent() {
 		merged: { label: "Merged", color: "#34d399", icon: CheckCircle2 },
 	};
 	return (
-		<div className="flex flex-col h-full">
+		<div className="relative flex flex-col h-full">
 			<Topbar
 				title="Active Contributions"
 				subtitle={`${ACTIVE.length} open pull requests`}
@@ -161,6 +161,29 @@ function RouteComponent() {
 						</div>
 					))}
 				</div>
+			</div>
+
+			{/* Coming soon overlay — feature not yet live */}
+			<div className="z-20 absolute inset-0 flex flex-col justify-center items-center bg-background/80 backdrop-blur-sm">
+				<motion.div
+					initial={{ opacity: 0, scale: 0.96 }}
+					animate={{ opacity: 1, scale: 1 }}
+					transition={{ duration: 0.3 }}
+					className="flex flex-col items-center gap-3 text-center px-6"
+				>
+					<div className="flex justify-center items-center bg-primary/10 border border-primary/20 rounded-2xl w-14 h-14">
+						<Clock size={22} className="text-primary" />
+					</div>
+					<div>
+						<div className="font-medium text-foreground text-lg">
+							Coming Soon
+						</div>
+						<p className="mt-1 max-w-xs text-muted-foreground text-sm leading-relaxed">
+							Live contribution tracking is on its way. We're wiring up real PR
+							status from your connected repositories.
+						</p>
+					</div>
+				</motion.div>
 			</div>
 		</div>
 	);

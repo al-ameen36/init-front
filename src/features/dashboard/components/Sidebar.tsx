@@ -12,10 +12,15 @@ import type { NavId } from "#/features/dashboard/types";
 import type { RepoItem } from "@/context/RepoContext";
 import { useAuth } from "@/hooks/useAuth";
 
-const NAV: { id: NavId; icon: React.ElementType; label: string }[] = [
+const NAV: {
+	id: NavId;
+	icon: React.ElementType;
+	label: string;
+	soon?: boolean;
+}[] = [
 	{ id: "matches", icon: Compass, label: "Matches" },
 	{ id: "repos", icon: GitBranch, label: "Repositories" },
-	{ id: "active", icon: GitPullRequest, label: "Active" },
+	{ id: "active", icon: GitPullRequest, label: "Active", soon: true },
 	{ id: "skills", icon: BarChart3, label: "Skills" },
 ];
 
@@ -66,7 +71,7 @@ export function Sidebar({
 			</div>
 
 			<nav className="flex-1 space-y-0.5 px-3 py-4">
-				{NAV.map(({ id, icon: Icon, label }) => (
+				{NAV.map(({ id, icon: Icon, label, soon }) => (
 					<Link
 						to={`/${id}`}
 						key={id}
@@ -79,6 +84,11 @@ export function Sidebar({
 					>
 						<Icon size={16} />
 						{label}
+						{soon && (
+							<span className="bg-primary/12 ml-auto px-1.5 py-0.5 rounded font-mono text-[9px] uppercase tracking-wide text-primary">
+								soon
+							</span>
+						)}
 						{id === "repos" && addedRepos.length > 0 && (
 							<span className="bg-white/6 ml-auto px-1.5 py-0.5 rounded font-mono text-[10px] text-muted-foreground">
 								{addedRepos.length}
