@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
 	BarChart3,
@@ -15,21 +16,54 @@ import {
 	ResponsiveContainer,
 	Tooltip,
 } from "recharts";
-import { SkillBar } from "#/components/SkillBar";
 import { Topbar } from "#/features/dashboard/components/Topbar";
-import { ACTIVITY, SKILL_RADAR, USER } from "#/features/dashboard/data";
+import { useProfile } from "@/context/ProfileContext";
+import { fetchGithubStats } from "@/lib/api";
 
 export const Route = createFileRoute("/_dashboard/_layout/skills")({
 	component: RouteComponent,
 });
 
 function RouteComponent() {
+	const { profile } = useProfile();
+
+	const {
+		data: stats,
+		isLoading,
+		isError,
+	} = useQuery({
+		queryKey: ["github-stats", profile?.username],
+		queryFn: () => fetchGithubStats(profile!.username!),
+		enabled: !!profile?.username,
+	});
+
+	const activity = stats?.activity ?? [];
+	const streak = stats?.streak ?? 0;
+
+	// User's own tech stack (from onboarding), as a label -> usage-count map.
+	// Tolerates both the new dict shape and the legacy string[] shape.
+	const rawPackages = profile?.tech_stack?.packages;
+	const techPackages: Record<string, number> = Array.isArray(rawPackages)
+		? Object.fromEntries(rawPackages.map((p) => [p, 1]))
+		: (rawPackages ?? {});
+	const techEntries = Object.entries(techPackages).sort((a, b) => b[1] - a[1]);
+	const maxTech = techEntries.length ? techEntries[0][1] : 1;
+
+	// Fixed cap so the radar stays readable when a user has many packages.
+	const RADAR_LIMIT = 8;
+	const radarEntries = techEntries.slice(0, RADAR_LIMIT);
+	const radarData = radarEntries.map(([name, count]) => ({
+		skill: name,
+		value: Math.round((count / maxTech) * 100),
+	}));
+
+	const subtitle = stats
+		? `Derived from ${stats.repos} repositories and ${stats.merged_prs} pull requests`
+		: "Connect your account to build a skill profile";
+
 	return (
 		<div className="flex flex-col h-full">
-			<Topbar
-				title="Skill Profile"
-				subtitle="Derived from 34 repositories and 127 pull requests"
-			/>
+			<Topbar title="Skill Profile" subtitle={subtitle} />
 			<div className="flex-1 px-7 py-6 overflow-y-auto scrollbar-hide">
 				<div className="gap-6 grid grid-cols-1 lg:grid-cols-[1fr_300px] max-w-4xl">
 					<div className="bg-card p-6 border border-border rounded-xl">
@@ -39,7 +73,7 @@ function RouteComponent() {
 						</div>
 						<div className="h-64">
 							<ResponsiveContainer width="100%" height="100%">
-								<RadarChart data={SKILL_RADAR}>
+								<RadarChart data={radarData}>
 									<PolarGrid stroke="rgba(255,255,255,0.06)" />
 									<PolarAngleAxis
 										dataKey="skill"
@@ -73,19 +107,30 @@ function RouteComponent() {
 						</div>
 					</div>
 
-					<div className="space-y-4 bg-card p-6 border border-border rounded-xl">
-						<div className="flex items-center gap-2 font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
+					<div className="flex flex-col max-h-[360px] bg-card p-6 border border-border rounded-xl">
+						<div className="flex items-center gap-2 mb-4 font-mono text-[10px] text-muted-foreground uppercase tracking-widest shrink-0">
 							<BarChart3 size={10} />
-							Proficiency
+							Tech Stack
 						</div>
-						{SKILL_RADAR.map((s, i) => (
-							<SkillBar
-								key={s.skill}
-								name={s.skill}
-								level={s.value}
-								delay={i * 80}
-							/>
-						))}
+						<div className="flex-1 min-h-0 space-y-2 overflow-y-auto scrollbar-hide">
+							{techEntries.length === 0 ? (
+								<p className="font-mono text-[11px] text-muted-foreground">
+									{isLoading
+										? "Loading…"
+										: isError
+											? "Couldn't load skills"
+											: "No technologies detected"}
+								</p>
+							) : (
+								techEntries.map(([name]) => (
+									<div key={name} className="flex items-center py-0.5">
+										<span className="font-mono text-[11px] text-foreground/90">
+											{name}
+										</span>
+									</div>
+								))
+							)}
+						</div>
 					</div>
 
 					<div className="lg:col-span-2 bg-card p-6 border border-border rounded-xl">
@@ -94,26 +139,40 @@ function RouteComponent() {
 							Contribution activity · last 28 days
 						</div>
 						<div className="flex items-end gap-1.5 h-16">
-							{ACTIVITY.map((val, i) => (
-								<motion.div
-									key={val}
-									initial={{ height: 0 }}
-									whileInView={{ height: `${(val / 9) * 100}%` }}
-									viewport={{ once: true }}
-									transition={{ delay: i * 0.025, duration: 0.5 }}
-									className="flex-1 rounded-sm min-h-[3px]"
-									style={{
-										backgroundColor:
-											val === 0
-												? "rgba(255,255,255,0.05)"
-												: val >= 7
-													? "#5b6af0"
-													: val >= 4
-														? "#5b6af0aa"
-														: "#5b6af055",
-									}}
-								/>
-							))}
+							{activity.length === 0
+								? Array.from({ length: 28 }, (_, i) => `day-${i}`).map(
+										(key) => (
+											<div
+												key={key}
+												className="flex-1 rounded-sm min-h-[3px]"
+												style={{
+													backgroundColor: "rgba(255,255,255,0.05)",
+												}}
+											/>
+										),
+									)
+								: activity
+										.map((val, i) => ({ key: `day-${i}`, val, i }))
+										.map(({ key, val, i }) => (
+											<motion.div
+												key={key}
+												initial={{ height: 0 }}
+												whileInView={{ height: `${(val / 9) * 100}%` }}
+												viewport={{ once: true }}
+												transition={{ delay: i * 0.025, duration: 0.5 }}
+												className="flex-1 rounded-sm min-h-[3px]"
+												style={{
+													backgroundColor:
+														val === 0
+															? "rgba(255,255,255,0.05)"
+															: val >= 7
+																? "#5b6af0"
+																: val >= 4
+																	? "#5b6af0aa"
+																	: "#5b6af055",
+												}}
+											/>
+										))}
 						</div>
 						<div className="flex justify-between mt-2">
 							<span className="font-mono text-[10px] text-muted-foreground/40">
@@ -129,25 +188,25 @@ function RouteComponent() {
 						{[
 							{
 								label: "Current streak",
-								value: `${USER.streak} days`,
+								value: `${streak} days`,
 								icon: Flame,
 								color: "#f59e0b",
 							},
 							{
 								label: "Total PRs merged",
-								value: 114,
+								value: stats?.merged_prs ?? 0,
 								icon: GitPullRequest,
 								color: "#34d399",
 							},
 							{
 								label: "Repositories",
-								value: USER.repos,
+								value: stats?.repos ?? 0,
 								icon: Code2,
 								color: "#5b6af0",
 							},
 							{
 								label: "Match success rate",
-								value: "94%",
+								value: "--",
 								icon: TrendingUp,
 								color: "#22d3ee",
 							},

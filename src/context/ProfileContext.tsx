@@ -24,7 +24,7 @@ type ProfileRow = {
 	total_stars?: number | null;
 	primary_languages?: string[] | null;
 	public_repos?: DeveloperProfile["public_repos"] | null;
-	tech_stack?: { packages?: string[] } | null;
+	tech_stack?: { packages?: Record<string, number> } | null;
 };
 
 function rowToProfile(row: ProfileRow): DeveloperProfile {
@@ -39,7 +39,7 @@ function rowToProfile(row: ProfileRow): DeveloperProfile {
 		primary_languages: row.primary_languages ?? [],
 		public_repos: row.public_repos ?? [],
 		tech_stack: row.tech_stack?.packages
-			? { packages: row.tech_stack.packages }
+			? { packages: row.tech_stack.packages as Record<string, number> }
 			: undefined,
 		commit_stats:
 			row.total_commits != null
@@ -60,7 +60,7 @@ function profileToRow(profile: DeveloperProfile) {
 		total_stars: profile.total_stars,
 		primary_languages: profile.primary_languages ?? [],
 		public_repos: profile.public_repos ?? [],
-		tech_stack: { packages: profile.tech_stack?.packages ?? [] },
+		tech_stack: { packages: profile.tech_stack?.packages ?? {} },
 		updated_at: new Date().toISOString(),
 	};
 }

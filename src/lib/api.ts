@@ -124,3 +124,19 @@ export function startDeveloperAnalysis(
 		body: JSON.stringify({ username }),
 	});
 }
+
+export type GithubStats = {
+	activity: number[];
+	streak: number;
+	languages: { name: string; bytes: number; value: number }[];
+	repos: number;
+	merged_prs: number;
+	total_stars: number;
+	total_commits: number;
+};
+
+export function fetchGithubStats(username: string): Promise<GithubStats> {
+	return request<GithubStats>(
+		`/github/stats?username=${encodeURIComponent(username)}`,
+	);
+}

@@ -89,13 +89,10 @@ function RouteComponent() {
 						} else if (e.type === "result") {
 							setBuildStatus(null);
 							collected[e.analysis.number] = e.analysis;
-							queryClient.setQueryData<AnalyzeBatch>(
-								analyzeKey,
-								(prev) => ({
-									...(prev ?? {}),
-									[e.analysis.number]: e.analysis,
-								}),
-							);
+							queryClient.setQueryData<AnalyzeBatch>(analyzeKey, (prev) => ({
+								...(prev ?? {}),
+								[e.analysis.number]: e.analysis,
+							}));
 						} else {
 							setBuildStatus(null);
 						}

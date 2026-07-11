@@ -102,7 +102,7 @@ export function techTokens(raw: string): Set<string> {
 
 export function developerTechTokens(profile: DeveloperProfile): Set<string> {
 	const set = new Set<string>();
-	for (const pkg of profile.tech_stack?.packages ?? []) {
+	for (const pkg of Object.keys(profile.tech_stack?.packages ?? {})) {
 		for (const t of techTokens(pkg)) set.add(t);
 	}
 	for (const lang of profile.primary_languages ?? []) {

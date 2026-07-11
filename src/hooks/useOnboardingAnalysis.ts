@@ -18,9 +18,13 @@ function toProfile(d: Record<string, unknown>): Partial<DeveloperProfile> {
 	if (d.stars != null) out.total_stars = d.stars;
 	if (d.languages != null) out.primary_languages = d.languages;
 	if (d.packages != null) {
-		out.tech_stack = { packages: Object.keys(d.packages as object) };
+		out.tech_stack = { packages: d.packages as Record<string, number> };
 	} else if (Array.isArray(d.technologies)) {
-		out.tech_stack = { packages: d.technologies as string[] };
+		out.tech_stack = {
+			packages: Object.fromEntries(
+				(d.technologies as string[]).map((t) => [t, 1]),
+			),
+		};
 	}
 	if (d.merged != null) out.merged_prs = d.merged as number;
 	if (d.total_commits != null) {

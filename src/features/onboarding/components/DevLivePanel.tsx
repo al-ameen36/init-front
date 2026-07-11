@@ -46,7 +46,7 @@ export function DevLivePanel({
 
 	const repos = analysis?.public_repos || [];
 	const languages = analysis?.primary_languages || [];
-	const techPackages = analysis?.tech_stack?.packages || [];
+	const techPackages = Object.keys(analysis?.tech_stack?.packages ?? {});
 	const showRepos = ["repos", "languages", "tools", "profile", "done"].includes(
 		phase,
 	);

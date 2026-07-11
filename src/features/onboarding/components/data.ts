@@ -21,5 +21,5 @@ export type DeveloperProfile = {
 		language?: string | null;
 		stars?: number;
 	}[];
-	tech_stack?: { packages?: string[] };
+	tech_stack?: { packages?: Record<string, number> };
 };
