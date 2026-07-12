@@ -244,3 +244,9 @@ Instead of asking:
 you can focus on:
 
 > _"How do I solve it?"_
+
+---
+
+## Related Projects
+
+- **[init-back](https://github.com/al-ameen36/init-back)** — the FastAPI backend that powers this frontend. It orchestrates GitHub, Graph Sitter, LLMs, and Supabase to deliver profile analysis, issue matching, and investigation guides over its API.
