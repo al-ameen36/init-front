@@ -1,94 +1,246 @@
-# Init (Frontend)
+# Init
 
-TanStack Start web app for **Init**. The landing experience is the developer
-onboarding ("Contributor Compass") flow: the frontend starts a profile analysis
-on the backend and reveals each step live as the backend streams it over SSE.
+> An AI onboarding engineer that helps developers understand unfamiliar codebases and contribute to open source with confidence.
 
-## Stack
+Init analyzes your GitHub profile, understands a repository's architecture, and matches you with issues that fit your experience. Instead of spending hours figuring out where to start, Init generates an investigation plan that guides you through the codebase.
 
-- TanStack Start (React 19, file-based routing)
+This repository contains the web application that powers the Init experience.
+
+---
+
+## Features
+
+- 🚀 GitHub authentication
+- 👤 Automatic developer profile generation
+- 📊 Live onboarding experience powered by Server-Sent Events
+- 🎯 Personalized issue recommendations
+- 🧠 AI-generated investigation guides
+- 📁 Repository management
+- 📈 Developer skills dashboard
+- ⚡ Streaming issue analysis
+
+---
+
+## User Journey
+
+```text
+Sign in with GitHub
+          │
+          ▼
+Analyze Developer Profile
+          │
+          ▼
+Understand Skills & Technologies
+          │
+          ▼
+Select Repository
+          │
+          ▼
+Match Issues
+          │
+          ▼
+Generate Investigation Guide
+          │
+          ▼
+Start Contributing
+```
+
+---
+
+## Tech Stack
+
+- React 19
+- TanStack Start
 - Tailwind CSS v4
-- Biome (lint + format)
-- Nitro (production server adapter)
-- `motion`, `recharts`, `lucide-react`, `zod`
+- TanStack Query
+- Supabase
+- Motion
+- Recharts
+- Zod
+- Biome
 
-## Setup
+---
+
+## Getting Started
+
+### Install dependencies
 
 ```bash
 pnpm install
+```
 
-# configure the backend URL
+### Configure environment
+
+```bash
 cp .env.example .env
 ```
 
 ```dotenv
-# .env
-SERVER_URL=http://localhost:8000
+VITE_SERVER_URL=http://localhost:8000
+
+VITE_SUPABASE_URL=https://<project>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<publishable-anon-key>
 ```
 
-`SERVER_URL` is read at runtime in `src/lib/api.ts` and used directly for both
-the REST call and the SSE connection — there is **no** `/api` proxy.
+---
 
 ## Running
 
 ```bash
-pnpm dev        # vite dev --port 3000  -> http://localhost:3000
+pnpm dev
 ```
+
+The application runs at:
+
+```
+http://localhost:3000
+```
+
+---
 
 ## Scripts
 
 ```bash
-pnpm dev          # start dev server on :3000
-pnpm build        # production build (runs biome check/format first)
-pnpm test         # vitest run
-pnpm check        # biome check
-pnpm lint         # biome lint
-pnpm format       # biome format
-pnpm generate-routes  # tsr generate
+pnpm dev
+pnpm build
+pnpm test
+pnpm check
+pnpm lint
+pnpm format
+pnpm generate-routes
 ```
 
-## Routes
+---
 
-| Route          | Purpose                                                  |
-| -------------- | -------------------------------------------------------- |
-| `/`            | Landing page                                             |
-| `/signin`      | Sign in                                                  |
-| `/signup`      | Sign up                                                  |
-| `/onboarding`  | Developer analysis flow (SSE-driven timeline)            |
-| `/matches`     | Matches dashboard (post-analysis CTA target)             |
-| `/dashboard/*` | Authenticated dashboard (skills, repos, active, matches) |
+## Authentication
 
-## Onboarding flow (`/onboarding`)
+Authentication is handled with **Supabase GitHub OAuth**.
 
-`useOnboardingAnalysis` (in `src/hooks/`) starts the analysis and opens an
-`EventSource` at `${SERVER_URL}/developer/events/${job_id}`. As each backend
-event arrives the profile data is merged and a `phaseIndex` advances:
+After signing in, Init automatically uses your GitHub account to:
 
-| Phase | Event          | Timeline step                |
-| ----- | -------------- | ---------------------------- |
-| 1     | open / profile | Connecting to GitHub         |
-| 2     | repositories   | Fetching repositories        |
-| 3     | languages      | Analyzing languages          |
-| 4     | technologies   | Analyzing tools              |
-| 5     | pull_requests  | Reading contribution history |
-| 6     | completed      | Completing profile           |
+- Build your developer profile
+- Analyze repositories you've worked on
+- Match issues against your experience
+- Persist your profile and tracked repositories
 
-The UI advances steps one at a time on a fixed 700ms dwell (`STEP_DWELL_MS`) so
-steps reveal sequentially even if backend events arrive batched. The live data
-panel (`features/onboarding/components/DevLivePanel.tsx`) shows repos,
-languages, technologies, and contribution history. When the `completed` event
-arrives the **Enter dashboard** button navigates to `/matches`.
+---
 
-> The analysis uses the signed-in GitHub account's username (from
-> `user_metadata.github_username`, set during the auth callback) — no hardcoded
-> demo user.
+## Application Flow
 
-## Project layout
+### 1. Developer Onboarding
 
+When a user signs in, Init builds a live developer profile by streaming analysis from the backend.
+
+The onboarding experience progressively reveals:
+
+- Profile information
+- Repositories
+- Languages
+- Technologies
+- Contribution history
+
+instead of waiting for the entire analysis to finish.
+
+---
+
+### 2. Repository Matching
+
+After onboarding, users choose a repository.
+
+Init then:
+
+- Fetches open issues
+- Analyzes the repository
+- Matches each issue against the developer profile
+- Streams results as they become available
+
+Each issue receives:
+
+- Match score
+- Required skills
+- Summary
+- Investigation guide
+- Relevant files
+
+---
+
+### 3. Investigation Guide
+
+Rather than simply recommending an issue, Init explains **how to approach it**.
+
+Each guide includes:
+
+- Relevant files
+- Suggested reading order
+- Important concepts
+- Implementation hints
+- Links back to GitHub
+
+The goal is to help developers spend less time navigating unfamiliar codebases and more time solving the problem.
+
+---
+
+## Pages
+
+| Route            | Description                        |
+| ---------------- | ---------------------------------- |
+| `/`              | Landing page                       |
+| `/signin`        | Sign in                            |
+| `/signup`        | Create account                     |
+| `/auth/callback` | GitHub OAuth callback              |
+| `/onboarding`    | Live profile analysis              |
+| `/matches`       | Personalized issue recommendations |
+| `/repos`         | Repository management              |
+| `/skills`        | Skills dashboard                   |
+| `/active`        | Active contributions               |
+
+---
+
+## Project Structure
+
+```text
+src/
+├── routes/
+├── features/
+│   ├── landing/
+│   ├── onboarding/
+│   └── dashboard/
+├── context/
+├── hooks/
+├── lib/
+└── components/
 ```
-src/routes/                       file-based routes
-src/hooks/useOnboardingAnalysis.ts   SSE runner + event -> phase mapping
-src/lib/api.ts                    SERVER_URL + REST helpers
-src/features/onboarding/          onboarding UI (DevLivePanel, data, helpers)
-src/features/dashboard/           dashboard types/components
-```
+
+---
+
+## Roadmap
+
+- ✅ GitHub authentication
+- ✅ Developer profile analysis
+- ✅ Live onboarding
+- ✅ Repository management
+- ✅ Personalized issue matching
+- ✅ Investigation guides
+- ⏳ Pull request planning
+- ⏳ Interactive code walkthroughs
+- ⏳ AI code explanations
+- ⏳ Team onboarding
+- ⏳ VS Code extension
+
+---
+
+## Why Init?
+
+Finding an issue is easy.
+
+Understanding **where to start** is the hard part.
+
+Init bridges that gap by combining your experience with an understanding of the repository to generate actionable investigation plans before you write a single line of code.
+
+Instead of asking:
+
+> _"Where is this implemented?"_
+
+you can focus on:
+
+> _"How do I solve it?"_
