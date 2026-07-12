@@ -1,22 +1,3 @@
-// export type Issue = {
-// 	id: number;
-// 	repo: string;
-// 	title: string;
-// 	labels: string[];
-// 	difficulty: "Low" | "Medium" | "High";
-// 	matchScore: number;
-// 	stars: number;
-// 	openedDaysAgo: number;
-// 	comments: number;
-// 	description: string;
-// 	matchReasons: string[];
-// 	files: string[];
-// 	steps: string[];
-// 	related: string[];
-// 	language: string;
-// 	bookmarked: boolean;
-// };
-
 export type Issue = {
 	number: number;
 	title: string;

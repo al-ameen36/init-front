@@ -1,9 +1,4 @@
-import {
-	AlertTriangle,
-	BookmarkIcon,
-	Clock,
-	MessageSquare,
-} from "lucide-react";
+import { AlertTriangle, Clock, MessageSquare } from "lucide-react";
 import { motion } from "motion/react";
 import { DifficultyBadge } from "../../../components/DifficultyBadge";
 import { MatchRing } from "../../../components/MatchRing";
@@ -13,12 +8,10 @@ export function IssueCard({
 	issue,
 	isSelected,
 	onClick,
-	onBookmark,
 }: {
 	issue: Issue;
 	isSelected: boolean;
 	onClick: () => void;
-	onBookmark: () => void;
 }) {
 	const matchScore = issue.matchScore;
 	const difficulty = issue.difficulty;
@@ -59,16 +52,6 @@ export function IssueCard({
 						{issue.title}
 					</div>
 				</div>
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						onBookmark();
-					}}
-					className="absolute top-4 right-4 p-1 rounded transition-colors text-muted-foreground/30 hover:text-muted-foreground"
-				>
-					<BookmarkIcon size={13} fill="none" />
-				</button>
 			</div>
 			<div className="flex flex-wrap items-center gap-1.5">
 				{isAnalyzed && difficulty && <DifficultyBadge level={difficulty} />}

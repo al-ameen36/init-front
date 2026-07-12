@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_dashboard/_layout/matches")({
 
 function RouteComponent() {
 	const { profile } = useProfile();
-	const { activeRepo, repos, loading: reposLoading } = useRepos();
+	const { activeRepo, loading: reposLoading } = useRepos();
 	const queryClient = useQueryClient();
 	const profileKey = profile?.username ?? "anon";
 	const analyzeKey = ["analyze-batch", activeRepo, profileKey] as const;
@@ -42,7 +42,6 @@ function RouteComponent() {
 		batch: false,
 	};
 	const [selectedId, setSelectedId] = useState<number | null>(null);
-	const [repoFilter, setRepoFilter] = useState("all");
 	const [diffFilter, setDiffFilter] = useState("All");
 	const [sort, setSort] = useState("Best match");
 	const [showSort, setShowSort] = useState(false);
@@ -175,8 +174,6 @@ function RouteComponent() {
 		};
 	});
 
-	const repoOptions = activeRepo ? [activeRepo] : ["all"];
-
 	const filtered = displayIssues
 		.filter((i) => {
 			if (search && !i.title.toLowerCase().includes(search.toLowerCase()))
@@ -191,8 +188,6 @@ function RouteComponent() {
 			if (sort === "Most active") return b.comments - a.comments;
 			return 0;
 		});
-
-	const toggleBookmark = (_id: number) => () => {};
 
 	const handleAnalyze = (issueNumber: number) => {
 		setSelectedId(issueNumber === selectedId ? null : issueNumber);
@@ -279,30 +274,11 @@ function RouteComponent() {
 							/>
 						</div>
 
-						{/* Repo label — with a single active repo this is just an
-						    indicator, not a filter, so it isn't clickable. */}
-						{repoOptions.length <= 1 ? (
-							<span className="font-mono text-[11px] px-2.5 py-1.5 rounded-md bg-primary/15 text-primary">
-								{repoOptions[0] === "all" ? "All repos" : repoOptions[0]}
-							</span>
-						) : (
-							repoOptions.map((r) => (
-								<button
-									type="button"
-									key={r}
-									onClick={() => setRepoFilter(r)}
-									className={`font-mono text-[11px] px-2.5 py-1.5 rounded-md transition-colors ${
-										repoFilter === r
-											? "bg-primary/15 text-primary"
-											: "text-muted-foreground hover:text-foreground hover:bg-white/4"
-									}`}
-								>
-									{r === "all" ? "All repos" : r}
-								</button>
-							))
-						)}
-
-						{repos.length > 0 && <div className="bg-border w-px h-4" />}
+						{/* Active repo indicator — the page is scoped to one repo,
+						    so this is just a label, not a clickable filter. */}
+						<span className="font-mono text-[11px] px-2.5 py-1.5 rounded-md bg-primary/15 text-primary">
+							{activeRepo}
+						</span>
 
 						{["All", "Low", "Medium", "High"].map((d) => (
 							<button
@@ -387,7 +363,6 @@ function RouteComponent() {
 												issue={issue}
 												isSelected={selectedId === issue.number}
 												onClick={() => handleAnalyze(issue.number)}
-												onBookmark={() => toggleBookmark(issue.number)}
 											/>
 										))}
 									</AnimatePresence>

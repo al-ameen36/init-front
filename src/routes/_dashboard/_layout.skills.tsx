@@ -33,7 +33,7 @@ function RouteComponent() {
 		isError,
 	} = useQuery({
 		queryKey: ["github-stats", profile?.username],
-		queryFn: () => fetchGithubStats(profile!.username!),
+		queryFn: () => fetchGithubStats(profile?.username),
 		enabled: !!profile?.username,
 	});
 

@@ -39,8 +39,8 @@ export function DetailPanel({
 	const language = issue?.language ?? "Unknown";
 	const matchScore = issue?.matchScore;
 	const difficulty = issue?.guide?.difficulty;
-	const comments = issue?.guide?.comments ?? basicIssue?.comments ?? 0;
-	const opened = issue?.guide?.opened ?? basicIssue?.opened ?? "—";
+	const comments = issue?.guide?.comments ?? 0;
+	const opened = issue?.guide?.opened ?? "—";
 	const summary = isError
 		? "—"
 		: (issue?.guide?.summary ?? "Analysis in progress…");
