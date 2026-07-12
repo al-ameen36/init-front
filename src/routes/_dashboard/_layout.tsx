@@ -1,5 +1,5 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Sidebar } from "#/features/dashboard/components/Sidebar";
 import type { NavId } from "#/features/dashboard/types";
 import { useRepos } from "@/context/RepoContext";
@@ -9,8 +9,19 @@ export const Route = createFileRoute("/_dashboard/_layout")({
 });
 
 function RouteComponent() {
-	const [active, setActive] = useState<NavId>("matches");
+	const location = useLocation();
+	const [active, setActive] = useState<NavId>(() => {
+		const seg = location.pathname.split("/")[1] as NavId;
+		return ["matches", "repos", "active", "skills"].includes(seg)
+			? seg
+			: "matches";
+	});
 	const { repos } = useRepos();
+
+	useEffect(() => {
+		const seg = location.pathname.split("/")[1] as NavId;
+		if (seg) setActive(seg);
+	}, [location.pathname]);
 	return (
 		<div
 			className="flex bg-background h-screen overflow-hidden text-foreground"
