@@ -105,6 +105,9 @@ export function Sidebar({
 				>
 					<Settings size={16} />
 					Settings
+					<span className="bg-primary/12 ml-auto px-1.5 py-0.5 rounded font-mono text-[9px] uppercase tracking-wide text-primary">
+						soon
+					</span>
 				</button>
 				<button
 					type="button"

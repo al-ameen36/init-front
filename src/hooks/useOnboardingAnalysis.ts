@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { DeveloperProfile } from "@/features/onboarding/components/data";
+import { useAuth } from "@/hooks/useAuth";
 import { SERVER_URL, startDeveloperAnalysis } from "@/lib/api";
 
 export type { DeveloperProfile } from "@/features/onboarding/components/data";
-
-const DEMO_USER = "yyx990803";
 
 function toProfile(d: Record<string, unknown>): Partial<DeveloperProfile> {
 	const out: Record<string, unknown> = {};
@@ -46,14 +45,26 @@ export function useOnboardingAnalysis(): {
 	const [error, setError] = useState<string | null>(null);
 	const started = useRef(false);
 	const finished = useRef(false);
+	const { user } = useAuth();
 
 	useEffect(() => {
-		if (started.current) return;
+		if (started.current || !user) return;
+
+		const username =
+			(user.user_metadata?.github_username as string | undefined) ||
+			(user.user_metadata?.preferred_username as string | undefined);
+
+		if (!username) {
+			setError("No GitHub username found for the signed-in account.");
+			setLoading(false);
+			return;
+		}
+
 		started.current = true;
 
 		const run = async () => {
 			try {
-				const { job_id } = await startDeveloperAnalysis(DEMO_USER);
+				const { job_id } = await startDeveloperAnalysis(username);
 				const es = new EventSource(`${SERVER_URL}/developer/events/${job_id}`);
 
 				const apply = (e: MessageEvent) => {
@@ -113,7 +124,7 @@ export function useOnboardingAnalysis(): {
 		};
 
 		void run();
-	}, []);
+	}, [user]);
 
 	return { profile, loading, phaseIndex, error };
 }

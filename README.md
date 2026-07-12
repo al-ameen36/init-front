@@ -79,7 +79,9 @@ panel (`features/onboarding/components/DevLivePanel.tsx`) shows repos,
 languages, technologies, and contribution history. When the `completed` event
 arrives the **Enter dashboard** button navigates to `/matches`.
 
-> The demo username is hardcoded (`yyx990803`) — no auth or input yet.
+> The analysis uses the signed-in GitHub account's username (from
+> `user_metadata.github_username`, set during the auth callback) — no hardcoded
+> demo user.
 
 ## Project layout
 
