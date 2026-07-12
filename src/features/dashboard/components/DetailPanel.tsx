@@ -47,6 +47,10 @@ export function DetailPanel({
 	const relevantFiles = issue?.guide?.relevant_files ?? [];
 	const investigationPath = issue?.guide?.investigation_path ?? [];
 	const requiredSkills = issue?.guide?.required_skills ?? [];
+	const issueUrl = basicIssue?.url ?? null;
+
+	const fileUrl = (file: string) =>
+		`https://github.com/${repo}/blob/HEAD/${file}`;
 
 	return (
 		<motion.div
@@ -60,7 +64,14 @@ export function DetailPanel({
 			<div className="relative z-30 flex items-start gap-3 px-6 py-4 border-border border-b">
 				<div className="flex-1 min-w-0">
 					<div className="flex items-center gap-2 mb-1 font-mono text-[10px] text-muted-foreground">
-						{repo}
+						<a
+							href={`https://github.com/${repo}`}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="hover:text-foreground transition-colors"
+						>
+							{repo}
+						</a>
 						<span className="px-1.5 py-0.5 border border-border/50 rounded text-[9px]">
 							{language}
 						</span>
@@ -199,8 +210,11 @@ export function DetailPanel({
 					<div className="space-y-1.5">
 						{relevantFiles.length > 0 ? (
 							relevantFiles.map((file) => (
-								<div
+								<a
 									key={file}
+									href={fileUrl(file)}
+									target="_blank"
+									rel="noopener noreferrer"
 									className="group flex items-center gap-2.5 bg-muted/20 px-3 py-2 border border-border/60 hover:border-white/12 rounded-md transition-colors cursor-pointer"
 								>
 									<Code2 size={11} className="text-muted-foreground shrink-0" />
@@ -211,7 +225,7 @@ export function DetailPanel({
 										size={9}
 										className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0"
 									/>
-								</div>
+								</a>
 							))
 						) : isAnalyzing ? (
 							<div className="text-muted-foreground text-xs">Loading…</div>
@@ -260,12 +274,14 @@ export function DetailPanel({
 			</div>
 
 			<div className="space-y-2 px-6 py-4 border-border border-t">
-				<button
-					type="button"
+				<a
+					href={issueUrl ?? undefined}
+					target="_blank"
+					rel="noopener noreferrer"
 					className="flex justify-center items-center gap-2 bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 py-2.5 rounded-lg w-full font-medium text-primary-foreground text-sm transition-all"
 				>
 					Open on GitHub <ArrowRight size={13} />
-				</button>
+				</a>
 			</div>
 
 			{isError && (
@@ -294,9 +310,14 @@ export function DetailPanel({
 								Retry analysis
 							</button>
 						)}
-						<div className="flex justify-center items-center gap-2 bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 py-2.5 rounded-lg w-full font-medium text-primary-foreground text-sm transition-all">
+						<a
+							href={issueUrl ?? undefined}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="flex justify-center items-center gap-2 bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 py-2.5 rounded-lg w-full font-medium text-primary-foreground text-sm transition-all"
+						>
 							Open on GitHub <ArrowRight size={13} />
-						</div>
+						</a>
 					</div>
 				</div>
 			)}
