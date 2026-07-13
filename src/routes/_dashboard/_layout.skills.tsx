@@ -27,14 +27,19 @@ export const Route = createFileRoute("/_dashboard/_layout/skills")({
 function RouteComponent() {
 	const { profile } = useProfile();
 
+	const username = profile?.username;
+
 	const {
 		data: stats,
 		isLoading,
 		isError,
 	} = useQuery({
-		queryKey: ["github-stats", profile?.username],
-		queryFn: () => fetchGithubStats(profile!.username!),
-		enabled: !!profile?.username,
+		queryKey: ["github-stats", username],
+		queryFn: () => {
+			if (!username) throw new Error("GitHub username is required");
+			return fetchGithubStats(username);
+		},
+		enabled: !!username,
 	});
 
 	const activity = stats?.activity ?? [];

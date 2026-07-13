@@ -318,7 +318,10 @@ function RouteComponent() {
 			<div className="flex-1 px-7 py-6 overflow-y-auto scrollbar-hide">
 				{loading ? (
 					<div className="flex flex-col justify-center items-center gap-3 py-20 h-full text-center">
-						<Loader2 size={22} className="text-primary animate-spin" />
+						<Loader2
+							size={22}
+							className="text-primary animate-spin will-change-transform"
+						/>
 						<p className="font-mono text-[11px] text-muted-foreground">
 							Loading repositories…
 						</p>
@@ -386,7 +389,10 @@ function RouteComponent() {
 						className="right-6 bottom-6 z-50 fixed flex items-center gap-2.5 bg-card shadow-2xl shadow-black/60 px-4 py-3 border border-border rounded-xl"
 					>
 						{toast.status === "loading" ? (
-							<Loader2 size={15} className="text-primary animate-spin" />
+							<Loader2
+								size={15}
+								className="text-primary animate-spin will-change-transform"
+							/>
 						) : (
 							<CheckCircle2 size={15} className="text-emerald-400" />
 						)}

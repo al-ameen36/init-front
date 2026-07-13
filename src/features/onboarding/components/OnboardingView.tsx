@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, CircleDot, Loader2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useProfile } from "@/context/ProfileContext";
@@ -60,12 +60,7 @@ export function OnboardingView() {
 
 			<div className="flex justify-between items-center px-8 py-4 border-border border-b">
 				<div className="flex items-center gap-2.5">
-					<div className="flex justify-center items-center bg-primary rounded-md w-7 h-7">
-						<CircleDot size={14} className="text-white" />
-					</div>
-					<span className="font-medium text-foreground text-sm">
-						Contributor Compass
-					</span>
+					<img src="/logo512.png" alt="init.dev" className="h-7 w-auto" />
 				</div>
 				<div className="font-mono text-[11px] text-muted-foreground">
 					{loading ? "Analyzing..." : "Ready"}
@@ -146,7 +141,7 @@ export function OnboardingView() {
 													<Loader2
 														size={11}
 														style={{ color: accentColor }}
-														className="animate-spin"
+														className="animate-spin will-change-transform"
 													/>
 												)}
 											</div>

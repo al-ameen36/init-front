@@ -37,7 +37,7 @@ export function MatchRing({
 			>
 				<Loader2
 					size={size * 0.6}
-					className="text-muted-foreground/40 animate-spin"
+					className="text-muted-foreground/40 animate-spin will-change-transform"
 				/>
 			</div>
 		);

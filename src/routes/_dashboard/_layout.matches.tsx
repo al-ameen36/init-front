@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useIsFetching, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ChevronDown,
@@ -10,7 +10,7 @@ import {
 	SlidersHorizontal,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DetailPanel } from "#/features/dashboard/components/DetailPanel";
 import { IssueCard } from "#/features/dashboard/components/IssueCard";
 import { Topbar } from "#/features/dashboard/components/Topbar";
@@ -56,6 +56,27 @@ function RouteComponent() {
 		initialFailed.issues,
 	);
 	const [batchError, setBatchError] = useState(initialFailed.batch);
+
+	// Track in-flight refetches so the UI can show a loading state on a manual
+	// refresh. React Query's `isLoading` stays false when cached data exists,
+	// so the issues spinner (gated on `issues.length === 0`) never shows on
+	// refresh without this.
+	const isIssuesFetching =
+		useIsFetching({ queryKey: ["issues", activeRepo] }) > 0;
+	const isAnalyzeFetching = useIsFetching({ queryKey: analyzeKey }) > 0;
+	const [refreshing, setRefreshing] = useState(false);
+	const sawFetch = useRef(false);
+	useEffect(() => {
+		if (!refreshing) {
+			sawFetch.current = false;
+			return;
+		}
+		if (isIssuesFetching || isAnalyzeFetching) sawFetch.current = true;
+		if (sawFetch.current && !isIssuesFetching && !isAnalyzeFetching) {
+			setRefreshing(false);
+			sawFetch.current = false;
+		}
+	}, [refreshing, isIssuesFetching, isAnalyzeFetching]);
 
 	// Issues for the active repo (cached across navigation by React Query).
 	const {
@@ -196,6 +217,7 @@ function RouteComponent() {
 	const handleRefresh = () => {
 		forceRef.current = true;
 		if (activeRepo) {
+			setRefreshing(true);
 			void queryClient.invalidateQueries({ queryKey: ["issues", activeRepo] });
 			void queryClient.invalidateQueries({
 				queryKey: ["analyze-batch", activeRepo, profileKey],
@@ -225,7 +247,14 @@ function RouteComponent() {
 					onClick={handleRefresh}
 					className="flex items-center gap-1.5 px-3 py-1.5 border border-border/60 hover:border-white/12 rounded-lg font-mono text-[11px] text-muted-foreground hover:text-foreground transition-colors"
 				>
-					<RefreshCw size={11} />
+					<RefreshCw
+						size={11}
+						className={
+							refreshing
+								? "shrink-0 animate-spin will-change-transform"
+								: "shrink-0"
+						}
+					/>
 					Refresh
 				</button>
 			</Topbar>
@@ -233,7 +262,10 @@ function RouteComponent() {
 			{!activeRepo ? (
 				reposLoading ? (
 					<div className="flex flex-col justify-center items-center gap-3 flex-1 text-center">
-						<Loader2 size={22} className="text-primary animate-spin" />
+						<Loader2
+							size={22}
+							className="text-primary animate-spin will-change-transform"
+						/>
 						<p className="font-mono text-[11px] text-muted-foreground">
 							Loading repositories…
 						</p>
@@ -333,11 +365,25 @@ function RouteComponent() {
 						</div>
 					</div>
 
-					<div className="flex flex-1 min-h-0">
+					<div className="relative flex flex-1 min-h-0">
+						{refreshing && (
+							<div className="z-10 flex absolute inset-0 flex-col justify-center items-center gap-3 bg-background/60 backdrop-blur-sm">
+								<Loader2
+									size={22}
+									className="text-primary animate-spin will-change-transform"
+								/>
+								<p className="font-mono text-[11px] text-muted-foreground">
+									Refreshing issues…
+								</p>
+							</div>
+						)}
 						<div className="flex-1 space-y-3 px-7 py-5 overflow-y-auto scrollbar-hide">
 							{loading && issues.length === 0 ? (
 								<div className="flex flex-col justify-center items-center gap-3 py-20 h-full text-center">
-									<Loader2 size={22} className="text-primary animate-spin" />
+									<Loader2
+										size={22}
+										className="text-primary animate-spin will-change-transform"
+									/>
 									<p className="font-mono text-[11px] text-muted-foreground">
 										Loading issues…
 									</p>
