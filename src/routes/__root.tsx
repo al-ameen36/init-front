@@ -2,7 +2,7 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import appCss from "#/styles/index.css?url";
 import { ProfileProvider } from "@/context/ProfileContext";
 import { RepoProvider } from "@/context/RepoContext";
@@ -55,6 +55,19 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+	useEffect(() => {
+		// Safety net: if Supabase returns an OAuth result (token or error) on any
+		// route other than the callback (e.g. a misconfigured redirect URL), push
+		// it into /auth/callback so the session is processed and the URL cleaned.
+		const hash = window.location.hash;
+		if (
+			(hash.includes("access_token") || hash.includes("error=")) &&
+			window.location.pathname !== "/auth/callback"
+		) {
+			window.location.replace(`/auth/callback${hash}`);
+		}
+	}, []);
+
 	const [queryClient] = useState(
 		() =>
 			new QueryClient({

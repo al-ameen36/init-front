@@ -3,17 +3,33 @@ import type {
 	IssuesResponse,
 } from "#/features/dashboard/types";
 import type { DeveloperProfile } from "@/features/onboarding/components/data";
+import { supabase } from "@/lib/supabase";
 
 export const SERVER_URL =
 	import.meta.env.VITE_SERVER_URL || "http://localhost:8000";
 
+async function authHeaders(): Promise<Record<string, string>> {
+	const headers: Record<string, string> = { accept: "application/json" };
+	const { data } = await supabase.auth.getSession();
+	const token = data.session?.access_token;
+	if (token) headers["Authorization"] = `Bearer ${token}`;
+	return headers;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+	const headers = await authHeaders();
 	const response = await fetch(`${SERVER_URL}${path}`, {
-		headers: { accept: "application/json" },
 		...init,
+		headers: {
+			...headers,
+			...(init?.headers as Record<string, string> | undefined),
+		},
 	});
 
 	if (!response.ok) {
+		if (response.status === 401 && typeof window !== "undefined") {
+			window.location.href = "/signin";
+		}
 		throw new Error(`API ${path} failed: ${response.statusText}`);
 	}
 
@@ -63,11 +79,15 @@ export async function analyzeIssuesStream(
 	profile?: DeveloperProfile | null,
 	opts: AnalyzeStreamOptions = {},
 ): Promise<void> {
+	const { data } = await supabase.auth.getSession();
+	const token = data.session?.access_token;
+
 	const response = await fetch(`${SERVER_URL}/analyze/`, {
 		method: "POST",
 		headers: {
 			"content-type": "application/json",
 			accept: "text/event-stream",
+			...(token ? { Authorization: `Bearer ${token}` } : {}),
 		},
 		body: JSON.stringify({
 			repo,
