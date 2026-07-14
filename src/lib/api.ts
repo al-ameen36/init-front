@@ -160,3 +160,22 @@ export function fetchGithubStats(username: string): Promise<GithubStats> {
 		`/github/stats?username=${encodeURIComponent(username)}`,
 	);
 }
+
+// The backend authenticates SSE streams (EventSource can't send a header) via
+// the HttpOnly `sb-access-token` cookie. Push the current Supabase access token
+// there so the /developer/events stream can verify it. Re-sync on refresh.
+export async function syncBackendSession(accessToken: string): Promise<void> {
+	await fetch(`${SERVER_URL}/auth/session`, {
+		method: "POST",
+		credentials: "include",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ access_token: accessToken }),
+	}).catch(() => {});
+}
+
+export async function clearBackendSession(): Promise<void> {
+	await fetch(`${SERVER_URL}/auth/logout`, {
+		method: "POST",
+		credentials: "include",
+	}).catch(() => {});
+}

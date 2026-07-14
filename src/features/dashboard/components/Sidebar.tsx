@@ -41,18 +41,17 @@ export function Sidebar({
 }) {
 	const { user, signOut } = useAuth();
 
+	const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
+	const str = (v: unknown) => (typeof v === "string" ? v : "");
 	const userData: User = user
 		? {
-				name:
-					user.user_metadata?.full_name || user.user_metadata?.name || "User",
+				name: str(meta.full_name) || str(meta.name) || "User",
 				handle:
-					user.user_metadata?.github_username ||
-					user.user_metadata?.preferred_username ||
-					"github",
+					str(meta.github_username) || str(meta.preferred_username) || "github",
 				avatar:
-					user.user_metadata?.avatar_url ||
-					user.user_metadata?.picture ||
-					`https://github.com/${user.user_metadata?.github_username || "user"}.png`,
+					str(meta.avatar_url) ||
+					str(meta.picture) ||
+					`https://github.com/${str(meta.github_username) || "user"}.png`,
 			}
 		: {
 				name: "User",

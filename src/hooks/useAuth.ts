@@ -1,6 +1,7 @@
 import type { Session, User } from "@supabase/supabase-js";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { clearBackendSession, syncBackendSession } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
 export function useAuth() {
@@ -10,18 +11,25 @@ export function useAuth() {
 
 	useEffect(() => {
 		supabase.auth.getSession().then(async ({ data: { session } }) => {
-			const currentUser = session?.user ?? null;
-			setUser(currentUser);
+			if (session) {
+				await syncBackendSession(session.access_token);
+			}
+			setUser(session?.user ?? null);
 			setLoading(false);
 		});
 
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange(
-			async (_event: string, session: Session | null) => {
-				const newUser = session?.user ?? null;
-				setUser(newUser);
+			async (event: string, session: Session | null) => {
+				setUser(session?.user ?? null);
 				setLoading(false);
+
+				if (session && event !== "SIGNED_OUT") {
+					await syncBackendSession(session.access_token);
+				} else if (event === "SIGNED_OUT") {
+					await clearBackendSession();
+				}
 			},
 		);
 

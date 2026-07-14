@@ -65,7 +65,9 @@ export function useOnboardingAnalysis(): {
 		const run = async () => {
 			try {
 				const { job_id } = await startDeveloperAnalysis(username);
-				const es = new EventSource(`${SERVER_URL}/developer/events/${job_id}`);
+				const es = new EventSource(`${SERVER_URL}/developer/events/${job_id}`, {
+					withCredentials: true,
+				});
 
 				const apply = (e: MessageEvent) => {
 					const parsed = JSON.parse(e.data) as Record<string, unknown>;
