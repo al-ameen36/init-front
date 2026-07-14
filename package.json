@@ -18,6 +18,7 @@
     "migrate": "biome migrate"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.1",
     "@supabase/supabase-js": "^2.49.4",
     "@tailwindcss/vite": "^4.3.2",
     "@tanstack/react-devtools": "latest",
@@ -27,7 +28,6 @@
     "@tanstack/react-router-ssr-query": "latest",
     "@tanstack/react-start": "latest",
     "@tanstack/router-plugin": "^1.132.0",
-    "js-cookie": "^3.0.8",
     "lucide-react": "^0.577.0",
     "motion": "^12.42.2",
     "nitro": "^3.0.260610-beta",
@@ -44,7 +44,6 @@
     "@tanstack/router-cli": "^1.132.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.0",
-    "@types/js-cookie": "^3.0.6",
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

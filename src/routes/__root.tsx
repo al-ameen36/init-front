@@ -4,6 +4,7 @@ import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { useEffect, useState } from "react";
 import appCss from "#/styles/index.css?url";
+import { SessionSync } from "@/components/SessionSync";
 import { ProfileProvider } from "@/context/ProfileContext";
 import { RepoProvider } from "@/context/RepoContext";
 
@@ -60,7 +61,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 		// route other than the callback (e.g. a misconfigured redirect URL), push
 		// it into /auth/callback so the session is processed and the URL cleaned.
 		const hash = window.location.hash;
+		// Only redirect if we don't already have a session. Once the session
+		// cookie exists the callback has (or is about to) process the result, so
+		// redirecting again would loop.
+		const hasSession = document.cookie.includes("sb-");
 		if (
+			!hasSession &&
 			(hash.includes("access_token") || hash.includes("error=")) &&
 			window.location.pathname !== "/auth/callback"
 		) {
@@ -91,6 +97,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body>
 				<QueryClientProvider client={queryClient}>
+					<SessionSync />
 					<ProfileProvider>
 						<RepoProvider>{children}</RepoProvider>
 					</ProfileProvider>

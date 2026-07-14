@@ -1,6 +1,7 @@
 import type { Session, UserIdentity } from "@supabase/supabase-js";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { syncBackendSession } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/auth/callback")({
@@ -29,11 +30,26 @@ function AuthCallback() {
 	const navigate = useNavigate();
 
 	useEffect(() => {
+		// Strip the OAuth result from the visible URL *synchronously*, before any
+		// async work. Child effects run before the root safety-net effect, so this
+		// guarantees the safety-net never observes a lingering #access_token (which
+		// would hard-redirect in a loop). supabase-js already captured the tokens
+		// from the URL at client init, so stripping here does not lose them.
+		if (window.location.hash || window.location.search.includes("code=")) {
+			window.history.replaceState({}, document.title, window.location.pathname);
+		}
+
 		const handleCallback = async () => {
 			try {
 				const session = await waitForSession();
 
 				if (session) {
+					// Mirror the access token into the backend's HttpOnly
+					// `sb-access-token` cookie now, before navigating, so the SSE
+					// stream authenticates on the very next page. (useAuth also
+					// re-syncs on refresh, but it isn't mounted here.)
+					await syncBackendSession(session.access_token);
+
 					const user = session.user;
 
 					const githubIdentity = user.identities?.find(

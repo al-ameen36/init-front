@@ -1,5 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
-import Cookies from "js-cookie";
+import { createBrowserClient } from "@supabase/ssr";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -8,46 +7,14 @@ if (!supabaseUrl || !supabasePublishableKey) {
 	throw new Error("Missing Supabase environment variables");
 }
 
-const SESSION_COOKIE = "sb-init-auth";
-
-// Store the Supabase session in a cookie instead of localStorage so it is
-// portable across tabs and survives reloads. NOTE: this cookie is readable by
-// client JS — httpOnly is not possible here because supabase-js must read it in
-// the browser to issue authenticated requests and refresh tokens. The
-// security-critical token the backend reads is the separate HttpOnly
-// `sb-access-token` cookie set by the API.
-const memory = new Map<string, string>();
-const isBrowser = typeof document !== "undefined";
-
-const cookieStorage = {
-	getItem: (key: string): string | null => {
-		if (isBrowser) return Cookies.get(key) ?? null;
-		return memory.get(key) ?? null;
-	},
-	setItem: (key: string, value: string): void => {
-		if (isBrowser) {
-			Cookies.set(key, value, {
-				path: "/",
-				sameSite: "lax",
-				secure: window.location.protocol === "https:",
-				expires: 30,
-			});
-		} else {
-			memory.set(key, value);
-		}
-	},
-	removeItem: (key: string): void => {
-		if (isBrowser) Cookies.remove(key, { path: "/" });
-		else memory.delete(key);
-	},
-};
-
-export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
-	auth: {
-		storage: cookieStorage,
-		storageKey: SESSION_COOKIE,
-		persistSession: true,
-		autoRefreshToken: true,
-		detectSessionInUrl: true,
-	},
-});
+// Canonical Supabase SSR browser client. It stores the session in cookies
+// (document.cookie) under the project's default name (`sb-<ref>-auth-token`),
+// detects the OAuth result from the URL automatically, and handles PKCE. We do
+// not use a custom js-cookie storage adapter — that deviated from the supported
+// path and caused auth bugs. The security-critical token sent to the FastAPI
+// backend lives in a separate HttpOnly `sb-access-token` cookie (see
+// syncBackendSession in lib/api.ts).
+export const supabase = createBrowserClient(
+	supabaseUrl,
+	supabasePublishableKey,
+);
