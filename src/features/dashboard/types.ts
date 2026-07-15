@@ -94,6 +94,17 @@ export type ExamplePR = {
 	summary: string;
 };
 
+export type PRStats = {
+	avg_time_to_merge_hours: number;
+	avg_files_changed: number;
+	avg_insertions: number;
+	avg_deletions: number;
+	median_review_rounds: number;
+	merge_rate_with_tests: number;
+	merge_rate_with_linked_issue: number;
+	merge_rate_conventional_title: number;
+};
+
 export type ContributorPlaybook = {
 	summary: string;
 	recommendations: Recommendation[];
@@ -101,4 +112,5 @@ export type ContributorPlaybook = {
 	example_prs: ExamplePR[];
 	prs_analyzed: number;
 	repo: string;
+	stats: PRStats;
 };

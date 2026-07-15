@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
 	AlertCircle,
+	BarChart3,
 	BookOpen,
 	CheckCircle2,
 	GitPullRequest,
@@ -11,7 +12,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { fetchRepoPattern } from "@/lib/api";
-import type { ContributorPlaybook, Recommendation } from "../types";
+import type { ContributorPlaybook, PRStats, Recommendation } from "../types";
 
 function PriorityBadge({ priority }: { priority: Recommendation["priority"] }) {
 	const colors = {
@@ -48,6 +49,66 @@ function Section({
 	);
 }
 
+function Stat({
+	label,
+	value,
+	note,
+}: {
+	label: string;
+	value: string;
+	note?: string;
+}) {
+	return (
+		<div className="flex flex-col gap-0.5">
+			<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider">
+				{label}
+			</span>
+			<span className="font-medium text-foreground text-sm">{value}</span>
+			{note && (
+				<span className="font-mono text-[9px] text-muted-foreground">
+					{note}
+				</span>
+			)}
+		</div>
+	);
+}
+
+function StatsGrid({ stats }: { stats: PRStats }) {
+	const pct = (n: number) => `${Math.round(n * 100)}%`;
+	return (
+		<Section icon={BarChart3} title="At a glance">
+			<div className="grid grid-cols-2 gap-x-6 gap-y-3">
+				<Stat
+					label="Avg merge time"
+					value={`${stats.avg_time_to_merge_hours}h`}
+				/>
+				<Stat
+					label="Avg files changed"
+					value={String(stats.avg_files_changed)}
+				/>
+				<Stat
+					label="Median reviews"
+					value={String(stats.median_review_rounds)}
+				/>
+				<Stat
+					label="Avg insertions"
+					value={`+${stats.avg_insertions}`}
+					note={`-${stats.avg_deletions} deletions`}
+				/>
+				<Stat label="With tests" value={pct(stats.merge_rate_with_tests)} />
+				<Stat
+					label="Linked issue"
+					value={pct(stats.merge_rate_with_linked_issue)}
+				/>
+				<Stat
+					label="Conventional title"
+					value={pct(stats.merge_rate_conventional_title)}
+				/>
+			</div>
+		</Section>
+	);
+}
+
 function SummaryTab({ playbook }: { playbook: ContributorPlaybook }) {
 	return (
 		<div className="space-y-6">
@@ -60,6 +121,7 @@ function SummaryTab({ playbook }: { playbook: ContributorPlaybook }) {
 					{playbook.summary}
 				</div>
 			)}
+			<StatsGrid stats={playbook.stats} />
 			{playbook.recommendations.length > 0 && (
 				<Section icon={Star} title="Top recommendations">
 					<div className="space-y-3">
