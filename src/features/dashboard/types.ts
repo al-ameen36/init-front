@@ -72,3 +72,33 @@ export type AddedRepo = {
 };
 
 export type NavId = "matches" | "repos" | "active" | "skills";
+
+// ---- Contributor Playbook (backend /pr-pattern) ----
+
+export type Recommendation = {
+	title: string;
+	description: string;
+	priority: "high" | "medium" | "low";
+	evidence: string[];
+};
+
+export type ChecklistItem = {
+	text: string;
+	required: boolean;
+};
+
+export type ExamplePR = {
+	number: number;
+	title: string;
+	url: string;
+	summary: string;
+};
+
+export type ContributorPlaybook = {
+	summary: string;
+	recommendations: Recommendation[];
+	checklist: ChecklistItem[];
+	example_prs: ExamplePR[];
+	prs_analyzed: number;
+	repo: string;
+};

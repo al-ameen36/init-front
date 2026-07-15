@@ -7,6 +7,7 @@ import {
 	CheckCircle2,
 	Clock,
 	GitBranch,
+	GitPullRequest,
 	Loader2,
 	Plus,
 	Star,
@@ -15,6 +16,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { AddRepoModal } from "#/features/dashboard/components/AddRepo";
+import { RepoPatternPanel } from "#/features/dashboard/components/RepoPatternPanel";
 import { Topbar } from "#/features/dashboard/components/Topbar";
 import { LANG_COLOR } from "#/features/dashboard/data";
 import { fetchRepoMeta } from "#/lib/api";
@@ -41,11 +43,13 @@ function RepoCard({
 	active,
 	onActivate,
 	onRequestRemove,
+	onViewPatterns,
 }: {
 	repo: RepoItem;
 	active: boolean;
 	onActivate: () => void;
 	onRequestRemove: () => void;
+	onViewPatterns: () => void;
 }) {
 	const { data: meta, isError: error } = useQuery({
 		queryKey: ["repoMeta", repo.owner, repo.name],
@@ -159,6 +163,14 @@ function RepoCard({
 			</div>
 
 			<div className="flex items-center gap-2 px-5 py-3 border-border border-t">
+				<button
+					type="button"
+					onClick={onViewPatterns}
+					className="flex items-center gap-1.5 hover:bg-primary/10 px-3 py-1.5 border border-border hover:border-primary/40 rounded-lg font-mono text-[11px] text-muted-foreground hover:text-primary transition-colors"
+				>
+					<GitPullRequest size={12} />
+					Patterns
+				</button>
 				{active ? (
 					<span className="flex items-center gap-1.5 font-mono text-[11px] text-primary">
 						<CheckCircle2 size={12} />
@@ -173,13 +185,15 @@ function RepoCard({
 						Set as active
 					</button>
 				)}
-				<Link
-					to="/matches"
-					onClick={onActivate}
-					className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 ml-auto px-3 py-1.5 rounded-lg font-medium text-primary-foreground text-[11px] transition-colors"
-				>
-					View issues <ArrowUpRight size={12} />
-				</Link>
+				{active && (
+					<Link
+						to="/matches"
+						onClick={onActivate}
+						className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 ml-auto px-3 py-1.5 rounded-lg font-medium text-primary-foreground text-[11px] transition-colors"
+					>
+						View issues <ArrowUpRight size={12} />
+					</Link>
+				)}
 			</div>
 		</motion.div>
 	);
@@ -254,6 +268,7 @@ function RouteComponent() {
 		useRepos();
 	const [showAdd, setShowAdd] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState<RepoItem | null>(null);
+	const [patternRepo, setPatternRepo] = useState<string | null>(null);
 	const [toast, setToast] = useState<{
 		status: "loading" | "success";
 		message: string;
@@ -315,67 +330,91 @@ function RouteComponent() {
 				</button>
 			</Topbar>
 
-			<div className="flex-1 px-7 py-6 overflow-y-auto scrollbar-hide">
-				{loading ? (
-					<div className="flex flex-col justify-center items-center gap-3 py-20 h-full text-center">
-						<Loader2
-							size={22}
-							className="text-primary animate-spin will-change-transform"
-						/>
-						<p className="font-mono text-[11px] text-muted-foreground">
-							Loading repositories…
-						</p>
-					</div>
-				) : repos.length === 0 ? (
-					<div className="flex flex-col justify-center items-center gap-4 py-20 h-full text-center">
-						<div className="flex justify-center items-center bg-primary/10 border border-primary/20 rounded-2xl w-16 h-16">
-							<GitBranch size={24} className="text-primary" />
-						</div>
-						<div>
-							<div className="mb-1 font-medium text-foreground text-base">
-								No repositories added yet
-							</div>
-							<p className="max-w-xs text-muted-foreground text-sm leading-relaxed">
-								Add a GitHub repository you want to contribute to. We'll analyze
-								its tech stack, complexity, and open issues — then match them to
-								your skills.
+			<div className="flex flex-1 min-h-0">
+				<div className="flex-1 px-7 py-6 overflow-y-auto scrollbar-hide">
+					{loading ? (
+						<div className="flex flex-col justify-center items-center gap-3 py-20 h-full text-center">
+							<Loader2
+								size={22}
+								className="text-primary animate-spin will-change-transform"
+							/>
+							<p className="font-mono text-[11px] text-muted-foreground">
+								Loading repositories…
 							</p>
 						</div>
-						<button
-							type="button"
-							onClick={() => setShowAdd(true)}
-							className="flex items-center gap-2 bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 px-6 py-3 rounded-xl font-medium text-primary-foreground text-sm transition-all"
-						>
-							<Plus size={14} />
-							Add your first repository
-						</button>
-					</div>
-				) : (
-					<div className="space-y-4 max-w-3xl">
-						<AnimatePresence initial={false}>
-							{repos.map((repo) => (
-								<RepoCard
-									key={repo.id}
-									repo={repo}
-									active={activeRepo === `${repo.owner}/${repo.name}`}
-									onActivate={() =>
-										handleActivate(`${repo.owner}/${repo.name}`)
-									}
-									onRequestRemove={() => setDeleteTarget(repo)}
-								/>
-							))}
-						</AnimatePresence>
+					) : repos.length === 0 ? (
+						<div className="flex flex-col justify-center items-center gap-4 py-20 h-full text-center">
+							<div className="flex justify-center items-center bg-primary/10 border border-primary/20 rounded-2xl w-16 h-16">
+								<GitBranch size={24} className="text-primary" />
+							</div>
+							<div>
+								<div className="mb-1 font-medium text-foreground text-base">
+									No repositories added yet
+								</div>
+								<p className="max-w-xs text-muted-foreground text-sm leading-relaxed">
+									Add a GitHub repository you want to contribute to. We'll
+									analyze its tech stack, complexity, and open issues — then
+									match them to your skills.
+								</p>
+							</div>
+							<button
+								type="button"
+								onClick={() => setShowAdd(true)}
+								className="flex items-center gap-2 bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 px-6 py-3 rounded-xl font-medium text-primary-foreground text-sm transition-all"
+							>
+								<Plus size={14} />
+								Add your first repository
+							</button>
+						</div>
+					) : (
+						<div className="space-y-4 max-w-3xl">
+							<AnimatePresence initial={false}>
+								{repos.map((repo) => (
+									<RepoCard
+										key={repo.id}
+										repo={repo}
+										active={activeRepo === `${repo.owner}/${repo.name}`}
+										onActivate={() =>
+											handleActivate(`${repo.owner}/${repo.name}`)
+										}
+										onRequestRemove={() => setDeleteTarget(repo)}
+										onViewPatterns={() =>
+											setPatternRepo(`${repo.owner}/${repo.name}`)
+										}
+									/>
+								))}
+							</AnimatePresence>
 
-						<button
-							type="button"
-							onClick={() => setShowAdd(true)}
-							className="flex justify-center items-center gap-2 hover:bg-primary/5 py-4 border border-border hover:border-primary/40 border-dashed rounded-xl w-full font-medium text-muted-foreground hover:text-primary text-sm transition-all"
+							<button
+								type="button"
+								onClick={() => setShowAdd(true)}
+								className="flex justify-center items-center gap-2 hover:bg-primary/5 py-4 border border-border hover:border-primary/40 border-dashed rounded-xl w-full font-medium text-muted-foreground hover:text-primary text-sm transition-all"
+							>
+								<Plus size={14} />
+								Add another repository
+							</button>
+						</div>
+					)}
+				</div>
+
+				<AnimatePresence>
+					{patternRepo && (
+						<motion.div
+							initial={{ width: 0, opacity: 0 }}
+							animate={{ width: 380, opacity: 1 }}
+							exit={{ width: 0, opacity: 0 }}
+							transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+							className="border-border border-l overflow-hidden shrink-0"
 						>
-							<Plus size={14} />
-							Add another repository
-						</button>
-					</div>
-				)}
+							<div className="flex flex-col w-[380px] h-full">
+								<RepoPatternPanel
+									repo={patternRepo}
+									onClose={() => setPatternRepo(null)}
+								/>
+							</div>
+						</motion.div>
+					)}
+				</AnimatePresence>
 			</div>
 
 			{/* Analysis feedback toast */}

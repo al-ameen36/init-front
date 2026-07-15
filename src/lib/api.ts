@@ -1,5 +1,6 @@
 import type {
 	AnalyzeIssueResponse,
+	ContributorPlaybook,
 	IssuesResponse,
 } from "#/features/dashboard/types";
 import type { DeveloperProfile } from "@/features/onboarding/components/data";
@@ -159,6 +160,17 @@ export function fetchGithubStats(username: string): Promise<GithubStats> {
 	return request<GithubStats>(
 		`/github/stats?username=${encodeURIComponent(username)}`,
 	);
+}
+
+export function fetchRepoPattern(
+	repo: string,
+	limit = 5,
+): Promise<ContributorPlaybook> {
+	return request<ContributorPlaybook>("/pr-pattern/analyze", {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ repo, limit }),
+	});
 }
 
 // The backend authenticates SSE streams (EventSource can't send a header) via
