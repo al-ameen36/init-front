@@ -95,14 +95,16 @@ export type ExamplePR = {
 };
 
 export type PRStats = {
-	avg_time_to_merge_hours: number;
-	avg_files_changed: number;
-	avg_insertions: number;
-	avg_deletions: number;
-	median_review_rounds: number;
-	merge_rate_with_tests: number;
-	merge_rate_with_linked_issue: number;
-	merge_rate_conventional_title: number;
+	min_time_to_merge_hours: number;
+	max_time_to_merge_hours: number;
+	min_files_changed: number;
+	max_files_changed: number;
+	min_insertions: number;
+	max_insertions: number;
+	min_deletions: number;
+	max_deletions: number;
+	min_review_rounds: number;
+	max_review_rounds: number;
 };
 
 export type ContributorPlaybook = {

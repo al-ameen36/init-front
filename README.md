@@ -208,7 +208,8 @@ src/
 ├── context/
 ├── hooks/
 ├── lib/
-└── components/
+├── components/
+└── styles/
 ```
 
 ---

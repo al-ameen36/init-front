@@ -74,35 +74,25 @@ function Stat({
 }
 
 function StatsGrid({ stats }: { stats: PRStats }) {
-	const pct = (n: number) => `${Math.round(n * 100)}%`;
 	return (
 		<Section icon={BarChart3} title="At a glance">
 			<div className="grid grid-cols-2 gap-x-6 gap-y-3">
 				<Stat
-					label="Avg merge time"
-					value={`${stats.avg_time_to_merge_hours}h`}
+					label="Merge time"
+					value={`${stats.min_time_to_merge_hours}h – ${stats.max_time_to_merge_hours}h`}
 				/>
 				<Stat
-					label="Avg files changed"
-					value={String(stats.avg_files_changed)}
+					label="Files changed"
+					value={`${stats.min_files_changed} – ${stats.max_files_changed}`}
 				/>
 				<Stat
-					label="Median reviews"
-					value={String(stats.median_review_rounds)}
+					label="Review rounds"
+					value={`${stats.min_review_rounds} – ${stats.max_review_rounds}`}
 				/>
 				<Stat
-					label="Avg insertions"
-					value={`+${stats.avg_insertions}`}
-					note={`-${stats.avg_deletions} deletions`}
-				/>
-				<Stat label="With tests" value={pct(stats.merge_rate_with_tests)} />
-				<Stat
-					label="Linked issue"
-					value={pct(stats.merge_rate_with_linked_issue)}
-				/>
-				<Stat
-					label="Conventional title"
-					value={pct(stats.merge_rate_conventional_title)}
+					label="Insertions"
+					value={`+${stats.min_insertions} – +${stats.max_insertions}`}
+					note={`-${stats.min_deletions} – -${stats.max_deletions} deletions`}
 				/>
 			</div>
 		</Section>
