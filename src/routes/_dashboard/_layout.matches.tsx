@@ -63,7 +63,6 @@ function RouteComponent() {
 	// refresh without this.
 	const isIssuesFetching =
 		useIsFetching({ queryKey: ["issues", activeRepo] }) > 0;
-	const isAnalyzeFetching = useIsFetching({ queryKey: analyzeKey }) > 0;
 	const [refreshing, setRefreshing] = useState(false);
 	const sawFetch = useRef(false);
 	useEffect(() => {
@@ -71,12 +70,12 @@ function RouteComponent() {
 			sawFetch.current = false;
 			return;
 		}
-		if (isIssuesFetching || isAnalyzeFetching) sawFetch.current = true;
-		if (sawFetch.current && !isIssuesFetching && !isAnalyzeFetching) {
+		if (isIssuesFetching) sawFetch.current = true;
+		if (sawFetch.current && !isIssuesFetching) {
 			setRefreshing(false);
 			sawFetch.current = false;
 		}
-	}, [refreshing, isIssuesFetching, isAnalyzeFetching]);
+	}, [refreshing, isIssuesFetching]);
 
 	// Issues for the active repo (cached across navigation by React Query).
 	const {
@@ -98,7 +97,7 @@ function RouteComponent() {
 	// they survive route navigation/remounts instead of being wiped.
 	const {
 		data: analysisData,
-		isLoading: analysisLoading,
+		isFetching: analysisStreaming,
 		isError: analysisError,
 	} = useQuery({
 		queryKey: analyzeKey,
@@ -187,7 +186,7 @@ function RouteComponent() {
 					? "error"
 					: batchError
 						? "error"
-						: analysisLoading
+						: analysisStreaming
 							? "analyzing"
 							: analysisError
 								? "error"
@@ -230,7 +229,7 @@ function RouteComponent() {
 	const selectedAnalysis =
 		selectedId != null ? (analysisMap.get(selectedId) ?? null) : null;
 	const isAnalyzingSelected =
-		selectedIdx >= 0 && analysisLoading && !selectedAnalysis;
+		selectedIdx >= 0 && analysisStreaming && !selectedAnalysis;
 
 	return (
 		<div className="flex flex-col h-full">

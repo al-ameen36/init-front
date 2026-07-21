@@ -165,11 +165,12 @@ export function fetchGithubStats(username: string): Promise<GithubStats> {
 export function fetchRepoPattern(
 	repo: string,
 	limit = 5,
+	force = false,
 ): Promise<ContributorPlaybook> {
 	return request<ContributorPlaybook>("/pr-pattern/analyze", {
 		method: "POST",
 		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ repo, limit }),
+		body: JSON.stringify({ repo, limit, force }),
 	});
 }
 

@@ -115,4 +115,6 @@ export type ContributorPlaybook = {
 	prs_analyzed: number;
 	repo: string;
 	stats: PRStats;
+	created_at?: string;
+	updated_at?: string;
 };

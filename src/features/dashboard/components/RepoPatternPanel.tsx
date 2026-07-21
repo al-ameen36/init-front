@@ -7,10 +7,12 @@ import {
 	GitPullRequest,
 	ListChecks,
 	Loader2,
+	RefreshCw,
 	Star,
 	X,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { useState } from "react";
 import { fetchRepoPattern } from "@/lib/api";
 import type { ContributorPlaybook, PRStats, Recommendation } from "../types";
 
@@ -249,6 +251,17 @@ const TABS: { id: Tab; label: string; icon: typeof BookOpen }[] = [
 	{ id: "examples", label: "Examples", icon: GitPullRequest },
 ];
 
+function timeAgo(iso: string): string {
+	const diff = Date.now() - new Date(iso).getTime();
+	const minute = 60_000;
+	const hour = 3_600_000;
+	const day = 86_400_000;
+	if (diff < minute) return "just now";
+	if (diff < hour) return `${Math.floor(diff / minute)}m ago`;
+	if (diff < day) return `${Math.floor(diff / hour)}h ago`;
+	return `${Math.floor(diff / day)}d ago`;
+}
+
 export function RepoPatternPanel({
 	repo,
 	onClose,
@@ -256,12 +269,17 @@ export function RepoPatternPanel({
 	repo: string;
 	onClose: () => void;
 }) {
-	const { data, isLoading, isError } = useQuery({
-		queryKey: ["repoPattern", repo],
-		queryFn: () => fetchRepoPattern(repo),
+	const [forceRefresh, setForceRefresh] = useState(false);
+	const { data, isLoading, isError, isFetching } = useQuery({
+		queryKey: ["repoPattern", repo, forceRefresh],
+		queryFn: () => fetchRepoPattern(repo, 5, forceRefresh),
 	});
 
 	const [tab, setTab] = useState<Tab>("summary");
+
+	const handleRefresh = () => {
+		setForceRefresh(true);
+	};
 
 	return (
 		<motion.div
@@ -281,15 +299,34 @@ export function RepoPatternPanel({
 					<h2 className="font-medium text-foreground text-sm truncate">
 						{repo}
 					</h2>
+					{data?.updated_at && (
+						<div className="mt-1 font-mono text-[9px] text-muted-foreground/60">
+							Analyzed {timeAgo(data.updated_at)}
+						</div>
+					)}
 				</div>
-				<button
-					type="button"
-					onClick={onClose}
-					className="hover:bg-white/5 p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors shrink-0"
-					aria-label="Close"
-				>
-					<X size={15} />
-				</button>
+				<div className="flex items-center gap-1 shrink-0">
+					<button
+						type="button"
+						onClick={handleRefresh}
+						disabled={isFetching}
+						className="hover:bg-white/5 p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+						aria-label="Refresh analysis"
+					>
+						<RefreshCw
+							size={14}
+							className={isFetching ? "animate-spin will-change-transform" : ""}
+						/>
+					</button>
+					<button
+						type="button"
+						onClick={onClose}
+						className="hover:bg-white/5 p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+						aria-label="Close"
+					>
+						<X size={15} />
+					</button>
+				</div>
 			</div>
 
 			<div className="flex gap-1 px-3 py-2 border-border border-b">
@@ -337,5 +374,3 @@ export function RepoPatternPanel({
 		</motion.div>
 	);
 }
-
-import { useState } from "react";
