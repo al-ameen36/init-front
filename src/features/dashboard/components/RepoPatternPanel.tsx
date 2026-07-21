@@ -276,8 +276,9 @@ export function RepoPatternPanel({
 
 	const { data, isLoading, isError, isFetching } = useQuery({
 		queryKey: ["repoPattern", repo],
-		queryFn: () =>
+		queryFn: ({ signal }) =>
 			fetchRepoPattern(repo, 5, {
+				signal,
 				onEvent: (e) => {
 					if (e.type === "status" || e.type === "progress") {
 						setStatusRef.current(e.message);

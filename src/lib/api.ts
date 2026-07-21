@@ -99,12 +99,14 @@ async function* readSSEStream<T>(
 			const frame = buffer.slice(0, sep);
 			buffer = buffer.slice(sep + 2);
 
-			const dataLine = frame
-				.split("\n")
-				.find((line) => line.startsWith("data:"));
-			if (!dataLine) continue;
+			let payload = "";
 
-			const payload = dataLine.slice(5).trim();
+			for (const line of frame.split("\n")) {
+				if (line.startsWith("data:")) {
+					payload += (payload ? "\n" : "") + line.slice(5).trim();
+				}
+			}
+
 			if (!payload) continue;
 
 			try {
@@ -152,6 +154,7 @@ export async function analyzeIssuesStream(
 	}
 
 	for await (const event of readSSEStream<AnalyzeStreamEvent>(response.body)) {
+		if (opts.signal?.aborted) break;
 		opts.onEvent?.(event);
 	}
 }
@@ -190,6 +193,7 @@ export type RepoPatternEvent =
 
 export type RepoPatternStreamOptions = {
 	force?: boolean;
+	signal?: AbortSignal;
 	onEvent?: (event: RepoPatternEvent) => void;
 };
 
@@ -214,6 +218,7 @@ export async function fetchRepoPattern(
 			...(token ? { Authorization: `Bearer ${token}` } : {}),
 		},
 		body: JSON.stringify({ repo, limit, force: opts.force ?? false }),
+		signal: opts.signal,
 	});
 
 	if (!response.ok || !response.body) {
@@ -221,6 +226,9 @@ export async function fetchRepoPattern(
 	}
 
 	for await (const event of readSSEStream<RepoPatternEvent>(response.body)) {
+		if (opts.signal?.aborted) {
+			throw new Error("Stream aborted");
+		}
 		opts.onEvent?.(event);
 		if (event.type === "result") {
 			return event.playbook;
