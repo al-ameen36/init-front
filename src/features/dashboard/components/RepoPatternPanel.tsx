@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	AlertCircle,
 	BarChart3,
@@ -12,7 +12,7 @@ import {
 	X,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { fetchRepoPattern } from "@/lib/api";
 import type { ContributorPlaybook, PRStats, Recommendation } from "../types";
 
@@ -269,17 +269,31 @@ export function RepoPatternPanel({
 	repo: string;
 	onClose: () => void;
 }) {
-	const [forceRefresh, setForceRefresh] = useState(false);
+	const queryClient = useQueryClient();
+	const [statusMsg, setStatusMsg] = useState<string | null>(null);
+	const setStatusRef = useRef(setStatusMsg);
+	setStatusRef.current = setStatusMsg;
+
 	const { data, isLoading, isError, isFetching } = useQuery({
-		queryKey: ["repoPattern", repo, forceRefresh],
-		queryFn: () => fetchRepoPattern(repo, 5, forceRefresh),
+		queryKey: ["repoPattern", repo],
+		queryFn: () =>
+			fetchRepoPattern(repo, 5, {
+				onEvent: (e) => {
+					if (e.type === "status" || e.type === "progress") {
+						setStatusRef.current(e.message);
+					} else {
+						setStatusRef.current(null);
+					}
+				},
+			}),
 	});
 
 	const [tab, setTab] = useState<Tab>("summary");
 
-	const handleRefresh = () => {
-		setForceRefresh(true);
-	};
+	const handleRefresh = useCallback(() => {
+		setStatusMsg("Starting analysis…");
+		queryClient.invalidateQueries({ queryKey: ["repoPattern", repo] });
+	}, [queryClient, repo]);
 
 	return (
 		<motion.div
@@ -299,11 +313,15 @@ export function RepoPatternPanel({
 					<h2 className="font-medium text-foreground text-sm truncate">
 						{repo}
 					</h2>
-					{data?.updated_at && (
+					{isFetching && statusMsg ? (
+						<div className="mt-1 font-mono text-[9px] text-primary">
+							{statusMsg}
+						</div>
+					) : data?.updated_at ? (
 						<div className="mt-1 font-mono text-[9px] text-muted-foreground/60">
 							Analyzed {timeAgo(data.updated_at)}
 						</div>
-					)}
+					) : null}
 				</div>
 				<div className="flex items-center gap-1 shrink-0">
 					<button
@@ -355,7 +373,7 @@ export function RepoPatternPanel({
 							className="text-primary animate-spin will-change-transform"
 						/>
 						<p className="font-mono text-[11px] text-muted-foreground">
-							Analyzing merged PRs…
+							{statusMsg || "Analyzing merged PRs…"}
 						</p>
 					</div>
 				)}

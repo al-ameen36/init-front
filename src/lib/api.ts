@@ -70,6 +70,54 @@ export type AnalyzeStreamOptions = {
 	onEvent?: (event: AnalyzeStreamEvent) => void;
 };
 
+// ---------------------------------------------------------------------------
+// Shared SSE stream parser
+// ---------------------------------------------------------------------------
+
+/**
+ * Reads an SSE response body and yields each parsed JSON event.
+ *
+ * Both `analyzeIssuesStream` and `fetchRepoPattern` previously duplicated this
+ * ~25-line loop verbatim. This utility centralises the framing logic once.
+ */
+async function* readSSEStream<T>(
+	body: ReadableStream<Uint8Array>,
+): AsyncGenerator<T> {
+	const reader = body.getReader();
+	const decoder = new TextDecoder();
+	let buffer = "";
+
+	while (true) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		buffer += decoder.decode(value, { stream: true });
+
+		while (true) {
+			const sep = buffer.indexOf("\n\n");
+			if (sep === -1) break;
+
+			const frame = buffer.slice(0, sep);
+			buffer = buffer.slice(sep + 2);
+
+			const dataLine = frame
+				.split("\n")
+				.find((line) => line.startsWith("data:"));
+			if (!dataLine) continue;
+
+			const payload = dataLine.slice(5).trim();
+			if (!payload) continue;
+
+			try {
+				yield JSON.parse(payload) as T;
+			} catch {
+				// Ignore malformed frames.
+			}
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+
 /**
  * Streams analysis over SSE via a POST body. EventSource can't send a body, so
  * we read the streamed response manually and emit each parsed event.
@@ -103,36 +151,8 @@ export async function analyzeIssuesStream(
 		throw new Error(`Analysis stream failed: ${response.statusText}`);
 	}
 
-	const reader = response.body.getReader();
-	const decoder = new TextDecoder();
-	let buffer = "";
-
-	while (true) {
-		const { done, value } = await reader.read();
-		if (done) break;
-		buffer += decoder.decode(value, { stream: true });
-
-		while (true) {
-			const sep = buffer.indexOf("\n\n");
-			if (sep === -1) break;
-
-			const frame = buffer.slice(0, sep);
-			buffer = buffer.slice(sep + 2);
-
-			const dataLine = frame
-				.split("\n")
-				.find((line) => line.startsWith("data:"));
-			if (!dataLine) continue;
-
-			const payload = dataLine.slice(5).trim();
-			if (!payload) continue;
-
-			try {
-				opts.onEvent?.(JSON.parse(payload) as AnalyzeStreamEvent);
-			} catch {
-				// Ignore malformed frames.
-			}
-		}
+	for await (const event of readSSEStream<AnalyzeStreamEvent>(response.body)) {
+		opts.onEvent?.(event);
 	}
 }
 
@@ -162,16 +182,55 @@ export function fetchGithubStats(username: string): Promise<GithubStats> {
 	);
 }
 
-export function fetchRepoPattern(
+export type RepoPatternEvent =
+	| { type: "status"; message: string }
+	| { type: "progress"; message: string; current: number; total: number }
+	| { type: "result"; playbook: ContributorPlaybook }
+	| { type: "error"; message: string };
+
+export type RepoPatternStreamOptions = {
+	force?: boolean;
+	onEvent?: (event: RepoPatternEvent) => void;
+};
+
+/**
+ * Streams PR pattern analysis over SSE via a POST body.
+ * Reads the streamed response manually and emits each parsed event.
+ * Resolves with the final ContributorPlaybook.
+ */
+export async function fetchRepoPattern(
 	repo: string,
 	limit = 5,
-	force = false,
+	opts: RepoPatternStreamOptions = {},
 ): Promise<ContributorPlaybook> {
-	return request<ContributorPlaybook>("/pr-pattern/analyze", {
+	const { data } = await supabase.auth.getSession();
+	const token = data.session?.access_token;
+
+	const response = await fetch(`${SERVER_URL}/pr-pattern/analyze`, {
 		method: "POST",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ repo, limit, force }),
+		headers: {
+			"content-type": "application/json",
+			accept: "text/event-stream",
+			...(token ? { Authorization: `Bearer ${token}` } : {}),
+		},
+		body: JSON.stringify({ repo, limit, force: opts.force ?? false }),
 	});
+
+	if (!response.ok || !response.body) {
+		throw new Error(`Repo pattern analysis failed: ${response.statusText}`);
+	}
+
+	for await (const event of readSSEStream<RepoPatternEvent>(response.body)) {
+		opts.onEvent?.(event);
+		if (event.type === "result") {
+			return event.playbook;
+		}
+		if (event.type === "error") {
+			throw new Error(event.message);
+		}
+	}
+
+	throw new Error("Stream ended without result");
 }
 
 // The backend authenticates SSE streams (EventSource can't send a header) via
