@@ -143,7 +143,7 @@ function RouteComponent() {
 							<Flame size={10} />
 							Contribution activity · last 28 days
 						</div>
-						<div className="flex items-end gap-1.5 h-16">
+						<div className="flex items-end gap-1.5 h-16 overflow-hidden">
 							{activity.length === 0
 								? Array.from({ length: 28 }, (_, i) => `day-${i}`).map(
 										(key) => (
@@ -162,7 +162,9 @@ function RouteComponent() {
 											<motion.div
 												key={key}
 												initial={{ height: 0 }}
-												whileInView={{ height: `${(val / 9) * 100}%` }}
+												whileInView={{
+													height: `${Math.min((val / 9) * 100, 100)}%`,
+												}}
 												viewport={{ once: true }}
 												transition={{ delay: i * 0.025, duration: 0.5 }}
 												className="flex-1 rounded-sm min-h-[3px]"

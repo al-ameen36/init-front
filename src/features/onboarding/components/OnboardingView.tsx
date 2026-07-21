@@ -6,6 +6,7 @@ import { useProfile } from "@/context/ProfileContext";
 import { DevLivePanel } from "@/features/onboarding/components/DevLivePanel";
 import type { Phase } from "@/features/onboarding/components/data";
 import { useOnboardingAnalysis } from "@/hooks/useOnboardingAnalysis";
+import { supabase } from "@/lib/supabase";
 
 const STEP_DWELL_MS = 700;
 
@@ -17,6 +18,12 @@ export function OnboardingView() {
 	useEffect(() => {
 		if (profile) setProfile(profile);
 	}, [profile, setProfile]);
+
+	useEffect(() => {
+		if (phaseIndex >= 6) {
+			supabase.auth.updateUser({ data: { onboarding_complete: true } });
+		}
+	}, [phaseIndex]);
 
 	const [displayPhase, setDisplayPhase] = useState(0);
 	useEffect(() => {
