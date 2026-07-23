@@ -17,6 +17,27 @@ const config = defineConfig({
 		tanstackStart(),
 		viteReact(),
 	],
+	build: {
+		chunkSizeWarningLimit: 600,
+		rollupOptions: {
+			output: {
+				manualChunks(id) {
+					if (
+						id.includes("node_modules/recharts") ||
+						id.includes("node_modules/victory-vendor")
+					) {
+						return "recharts";
+					}
+					if (
+						id.includes("node_modules/motion") ||
+						id.includes("node_modules/framer-motion")
+					) {
+						return "motion";
+					}
+				},
+			},
+		},
+	},
 });
 
 export default config;

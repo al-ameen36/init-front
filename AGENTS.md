@@ -16,43 +16,41 @@ pnpm format           # biome format
 pnpm generate-routes  # tsr generate (after route changes)
 ```
 
-Always run `pnpm check` (Biome) and `pnpm tsc --noEmit` after edits. The build's
-`prebuild` already runs Biome, but run it locally before committing.
+Always run `pnpm check` (Biome) and `pnpm tsc --noEmit` after edits.
 
 ## Routing
 
-- File-based routes in `src/routes/`. The dashboard uses a **pathless** layout
-  route `src/routes/_dashboard/_layout.tsx`; its children render at URLs
-  `/matches`, `/repos`, `/skills`, `/active` (no `/dashboard` segment).
+- File-based routes in `src/routes/`. Dashboard uses a **pathless** layout
+  `src/routes/_dashboard/_layout.tsx`; children at `/matches`, `/repos`,
+  `/skills`, `/active`.
 - Generate types after adding/renaming routes: `pnpm generate-routes`.
 
 ## State & data fetching
 
-- `src/lib/api.ts` holds `SERVER_URL` + REST helpers. No `/api` proxy — calls
-  hit the backend directly.
+- `src/lib/api.ts` holds `SERVER_URL` + REST/SSE helpers. No `/api` proxy.
+- `readSSEStream` parses SSE from `ReadableStream`. Handles `\n\n` and
+  `\r\n\r\n` separators, bare JSON frames, and throws on malformed JSON.
+  The `done` check runs after the frame loop to drain remaining buffer.
+- `fetchRepoPattern` accepts both JSON and SSE responses, including raw
+  playbook objects without an event envelope. Uses `retry: false`.
 - Issue analysis streams via `analyzeIssuesStream` (manual `fetch` +
-  `ReadableStream` reader parsing `data:` SSE frames), because `EventSource`
-  can't send a POST body.
-- `ProfileProvider` and `RepoProvider` (in `src/context/`) wrap the app. Use
-  `useProfile()` / `useRepos()`.
-- React Query caches the issue-analysis batch keyed by
-  `["analyze-batch", activeRepo, profileKey]`; results survive route
-  navigation. Don't wipe that cache on remount.
+  `ReadableStream` reader, because `EventSource` can't send POST).
+- `ProfileProvider` and `RepoProvider` (in `src/context/`) wrap the app.
+  Use `useProfile()` / `useRepos()`.
+- React Query caches issue-analysis batches keyed by
+  `["analyze-batch", activeRepo, profileKey]`.
 
 ## Conventions
 
-- Tailwind v4 utility classes; design tokens via CSS vars (`bg-card`,
+- Tailwind v4 utilities; design tokens via CSS vars (`bg-card`,
   `text-muted-foreground`, etc.).
 - Icons from `lucide-react`. Animations from `motion`.
-- GitHub links (issue URL, repo, file `blob` URLs) are built in
-  `features/dashboard/components/DetailPanel.tsx` — keep them consistent if you
-  add new links.
-- Prefer editing existing components; dashboard pieces live in
-  `src/features/dashboard/components/`.
+- GitHub links are built in `features/dashboard/components/DetailPanel.tsx`.
+- Prefer editing existing components in `src/features/dashboard/components/`.
 
 ## Gotchas
 
-- `routes/_dashboard/_layout.active.tsx` uses hardcoded placeholder data — treat
-  as WIP, not a real data source.
-- `Issue` types live in `src/features/dashboard/types.ts`; the backend
-  `AnalyzeIssueResponse` shape must match what `DetailPanel` reads.
+- `routes/_dashboard/_layout.active.tsx` uses hardcoded placeholder data.
+- `Issue` types live in `src/features/dashboard/types.ts`.
+- `vite.config.ts` uses `manualChunks` to split `recharts` and `motion` into
+  separate cached chunks. Main bundle: ~566 KB min / ~165 KB gzip.
