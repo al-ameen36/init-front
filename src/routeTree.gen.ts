@@ -9,25 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as SigninRouteImport } from './routes/signin'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as SigninRouteImport } from './routes/signin'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as DashboardLayoutRouteImport } from './routes/_dashboard/_layout'
-import { Route as DashboardLayoutSkillsRouteImport } from './routes/_dashboard/_layout.skills'
-import { Route as DashboardLayoutReposRouteImport } from './routes/_dashboard/_layout.repos'
-import { Route as DashboardLayoutMatchesRouteImport } from './routes/_dashboard/_layout.matches'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as DashboardLayoutActiveRouteImport } from './routes/_dashboard/_layout.active'
+import { Route as DashboardLayoutMatchesRouteImport } from './routes/_dashboard/_layout.matches'
+import { Route as DashboardLayoutReposRouteImport } from './routes/_dashboard/_layout.repos'
+import { Route as DashboardLayoutSkillsRouteImport } from './routes/_dashboard/_layout.skills'
 
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SigninRoute = SigninRouteImport.update({
-  id: '/signin',
-  path: '/signin',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -35,9 +30,18 @@ const OnboardingRoute = OnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const SigninRoute = SigninRouteImport.update({
+  id: '/signin',
+  path: '/signin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardLayoutRoute = DashboardLayoutRouteImport.update({
+  id: '/_dashboard/_layout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
@@ -45,18 +49,9 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardLayoutRoute = DashboardLayoutRouteImport.update({
-  id: '/_dashboard/_layout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardLayoutSkillsRoute = DashboardLayoutSkillsRouteImport.update({
-  id: '/skills',
-  path: '/skills',
-  getParentRoute: () => DashboardLayoutRoute,
-} as any)
-const DashboardLayoutReposRoute = DashboardLayoutReposRouteImport.update({
-  id: '/repos',
-  path: '/repos',
+const DashboardLayoutActiveRoute = DashboardLayoutActiveRouteImport.update({
+  id: '/active',
+  path: '/active',
   getParentRoute: () => DashboardLayoutRoute,
 } as any)
 const DashboardLayoutMatchesRoute = DashboardLayoutMatchesRouteImport.update({
@@ -64,9 +59,14 @@ const DashboardLayoutMatchesRoute = DashboardLayoutMatchesRouteImport.update({
   path: '/matches',
   getParentRoute: () => DashboardLayoutRoute,
 } as any)
-const DashboardLayoutActiveRoute = DashboardLayoutActiveRouteImport.update({
-  id: '/active',
-  path: '/active',
+const DashboardLayoutReposRoute = DashboardLayoutReposRouteImport.update({
+  id: '/repos',
+  path: '/repos',
+  getParentRoute: () => DashboardLayoutRoute,
+} as any)
+const DashboardLayoutSkillsRoute = DashboardLayoutSkillsRouteImport.update({
+  id: '/skills',
+  path: '/skills',
   getParentRoute: () => DashboardLayoutRoute,
 } as any)
 
@@ -153,18 +153,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signin': {
-      id: '/signin'
-      path: '/signin'
-      fullPath: '/signin'
-      preLoaderRoute: typeof SigninRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -174,18 +167,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/signin': {
+      id: '/signin'
+      path: '/signin'
+      fullPath: '/signin'
+      preLoaderRoute: typeof SigninRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/callback': {
-      id: '/auth/callback'
-      path: '/auth/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_dashboard/_layout': {
@@ -195,18 +188,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_dashboard/_layout/skills': {
-      id: '/_dashboard/_layout/skills'
-      path: '/skills'
-      fullPath: '/skills'
-      preLoaderRoute: typeof DashboardLayoutSkillsRouteImport
-      parentRoute: typeof DashboardLayoutRoute
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_dashboard/_layout/repos': {
-      id: '/_dashboard/_layout/repos'
-      path: '/repos'
-      fullPath: '/repos'
-      preLoaderRoute: typeof DashboardLayoutReposRouteImport
+    '/_dashboard/_layout/active': {
+      id: '/_dashboard/_layout/active'
+      path: '/active'
+      fullPath: '/active'
+      preLoaderRoute: typeof DashboardLayoutActiveRouteImport
       parentRoute: typeof DashboardLayoutRoute
     }
     '/_dashboard/_layout/matches': {
@@ -216,11 +209,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardLayoutMatchesRouteImport
       parentRoute: typeof DashboardLayoutRoute
     }
-    '/_dashboard/_layout/active': {
-      id: '/_dashboard/_layout/active'
-      path: '/active'
-      fullPath: '/active'
-      preLoaderRoute: typeof DashboardLayoutActiveRouteImport
+    '/_dashboard/_layout/repos': {
+      id: '/_dashboard/_layout/repos'
+      path: '/repos'
+      fullPath: '/repos'
+      preLoaderRoute: typeof DashboardLayoutReposRouteImport
+      parentRoute: typeof DashboardLayoutRoute
+    }
+    '/_dashboard/_layout/skills': {
+      id: '/_dashboard/_layout/skills'
+      path: '/skills'
+      fullPath: '/skills'
+      preLoaderRoute: typeof DashboardLayoutSkillsRouteImport
       parentRoute: typeof DashboardLayoutRoute
     }
   }
