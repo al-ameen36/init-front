@@ -113,8 +113,8 @@ function SummaryTab({ playbook }: { playbook: ContributorPlaybook }) {
 					{playbook.summary}
 				</div>
 			)}
-			<StatsGrid stats={playbook.stats} />
-			{playbook.recommendations.length > 0 && (
+			{playbook?.stats && <StatsGrid stats={playbook.stats} />}
+			{playbook?.recommendations?.length > 0 && (
 				<Section icon={Star} title="Top recommendations">
 					<div className="space-y-3">
 						{playbook.recommendations.map((rec, i) => (
@@ -159,8 +159,8 @@ function SummaryTab({ playbook }: { playbook: ContributorPlaybook }) {
 }
 
 function ChecklistTab({ playbook }: { playbook: ContributorPlaybook }) {
-	const required = playbook.checklist.filter((c) => c.required);
-	const optional = playbook.checklist.filter((c) => !c.required);
+	const required = playbook?.checklist?.filter((c) => c.required) || [];
+	const optional = playbook?.checklist?.filter((c) => !c.required) || [];
 	return (
 		<div className="space-y-6">
 			{required.length > 0 && (
@@ -193,7 +193,7 @@ function ChecklistTab({ playbook }: { playbook: ContributorPlaybook }) {
 					</div>
 				</Section>
 			)}
-			{playbook.checklist.length === 0 && (
+			{(!playbook?.checklist || playbook.checklist.length === 0) && (
 				<div className="text-muted-foreground text-xs">
 					No checklist items generated.
 				</div>
@@ -205,7 +205,7 @@ function ChecklistTab({ playbook }: { playbook: ContributorPlaybook }) {
 function ExamplesTab({ playbook }: { playbook: ContributorPlaybook }) {
 	return (
 		<div className="space-y-6">
-			{playbook.example_prs.length > 0 && (
+			{playbook?.example_prs?.length > 0 && (
 				<Section icon={GitPullRequest} title="Example PRs">
 					<div className="space-y-3">
 						{playbook.example_prs.map((pr) => (
@@ -234,7 +234,7 @@ function ExamplesTab({ playbook }: { playbook: ContributorPlaybook }) {
 					</div>
 				</Section>
 			)}
-			{playbook.example_prs.length === 0 && (
+			{(!playbook?.example_prs || playbook.example_prs.length === 0) && (
 				<div className="text-muted-foreground text-xs">
 					No example PRs identified.
 				</div>
@@ -274,8 +274,9 @@ export function RepoPatternPanel({
 	const setStatusRef = useRef(setStatusMsg);
 	setStatusRef.current = setStatusMsg;
 
-	const { data, isLoading, isError, isFetching } = useQuery({
+	const { data, isLoading, isError, isFetching, error } = useQuery({
 		queryKey: ["repoPattern", repo],
+		retry: false,
 		queryFn: ({ signal }) =>
 			fetchRepoPattern(repo, 5, {
 				signal,
@@ -382,7 +383,9 @@ export function RepoPatternPanel({
 					<div className="flex flex-col justify-center items-center gap-3 py-16 text-center">
 						<AlertCircle size={28} className="text-destructive/60" />
 						<p className="font-mono text-[11px] text-muted-foreground">
-							Could not analyze this repository.
+							{error instanceof Error
+								? error.message
+								: "Could not analyze this repository."}
 						</p>
 					</div>
 				)}

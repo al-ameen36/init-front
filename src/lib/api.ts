@@ -82,6 +82,7 @@ export type AnalyzeStreamOptions = {
  */
 async function* readSSEStream<T>(
 	body: ReadableStream<Uint8Array>,
+	onBuffer?: (buffer: string) => void,
 ): AsyncGenerator<T> {
 	const reader = body.getReader();
 	const decoder = new TextDecoder();
@@ -89,15 +90,22 @@ async function* readSSEStream<T>(
 
 	while (true) {
 		const { done, value } = await reader.read();
-		if (done) break;
-		buffer += decoder.decode(value, { stream: true });
+		if (value) {
+			buffer += decoder.decode(value, { stream: true });
+			if (onBuffer) onBuffer(buffer);
+		}
 
 		while (true) {
-			const sep = buffer.indexOf("\n\n");
+			let sep = buffer.indexOf("\n\n");
+			let advance = 2;
+			if (sep === -1) {
+				sep = buffer.indexOf("\r\n\r\n");
+				advance = 4;
+			}
 			if (sep === -1) break;
 
 			const frame = buffer.slice(0, sep);
-			buffer = buffer.slice(sep + 2);
+			buffer = buffer.slice(sep + advance);
 
 			let payload = "";
 
@@ -107,14 +115,26 @@ async function* readSSEStream<T>(
 				}
 			}
 
-			if (!payload) continue;
+			if (!payload) {
+				const trimmed = frame.trim();
+				if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+					payload = trimmed;
+				} else {
+					continue;
+				}
+			}
 
 			try {
 				yield JSON.parse(payload) as T;
-			} catch {
-				// Ignore malformed frames.
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
+				throw new Error(
+					`SSE JSON parse error: ${msg}. Payload: ${payload.slice(0, 100)}...`,
+				);
 			}
 		}
+
+		if (done) break;
 	}
 }
 
@@ -225,7 +245,20 @@ export async function fetchRepoPattern(
 		throw new Error(`Repo pattern analysis failed: ${response.statusText}`);
 	}
 
-	for await (const event of readSSEStream<RepoPatternEvent>(response.body)) {
+	const contentType = response.headers.get("content-type") || "";
+	if (contentType.includes("application/json")) {
+		const data = await response.json();
+		if (data.type === "result" && data.playbook) return data.playbook;
+		if (data.repo && data.stats) return data as ContributorPlaybook;
+	}
+
+	let rawBuffer = "";
+	for await (const event of readSSEStream<RepoPatternEvent>(
+		response.body,
+		(b) => {
+			rawBuffer = b;
+		},
+	)) {
 		if (opts.signal?.aborted) {
 			throw new Error("Stream aborted");
 		}
@@ -233,12 +266,18 @@ export async function fetchRepoPattern(
 		if (event.type === "result") {
 			return event.playbook;
 		}
+		// Fallback: if backend returns raw playbook via stream without event envelope
+		if ("repo" in event && "stats" in event) {
+			return event as unknown as ContributorPlaybook;
+		}
 		if (event.type === "error") {
 			throw new Error(event.message);
 		}
 	}
 
-	throw new Error("Stream ended without result");
+	throw new Error(
+		`Stream ended without result. Buffer preview: ${rawBuffer.slice(0, 200)}...`,
+	);
 }
 
 // The backend authenticates SSE streams (EventSource can't send a header) via
