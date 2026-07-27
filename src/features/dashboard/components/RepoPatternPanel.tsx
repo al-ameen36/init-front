@@ -4,6 +4,8 @@ import {
 	BarChart3,
 	BookOpen,
 	CheckCircle2,
+	Clipboard,
+	ClipboardCheck,
 	GitPullRequest,
 	ListChecks,
 	Loader2,
@@ -291,11 +293,79 @@ export function RepoPatternPanel({
 	});
 
 	const [tab, setTab] = useState<Tab>("summary");
+	const [copied, setCopied] = useState(false);
 
 	const handleRefresh = useCallback(() => {
 		setStatusMsg("Starting analysis…");
 		queryClient.invalidateQueries({ queryKey: ["repoPattern", repo] });
 	}, [queryClient, repo]);
+
+	const buildCopyText = () => {
+		const lines: string[] = [];
+		lines.push(`Contributor playbook: ${repo}`);
+		lines.push("");
+		if (data) {
+			lines.push("Summary");
+			lines.push(data.summary || "—");
+			lines.push("");
+			if (data.stats) {
+				const s = data.stats;
+				lines.push("At a glance");
+				lines.push(
+					`Merge time: ${s.min_time_to_merge_hours}h – ${s.max_time_to_merge_hours}h`,
+				);
+				lines.push(
+					`Files changed: ${s.min_files_changed} – ${s.max_files_changed}`,
+				);
+				lines.push(
+					`Review rounds: ${s.min_review_rounds} – ${s.max_review_rounds}`,
+				);
+				lines.push(`Insertions: +${s.min_insertions} – +${s.max_insertions}`);
+				lines.push(`Deletions: -${s.min_deletions} – -${s.max_deletions}`);
+				lines.push("");
+			}
+			if (data.recommendations?.length > 0) {
+				lines.push("Recommendations");
+				for (const rec of data.recommendations) {
+					lines.push(`${rec.title} [${rec.priority}]`);
+					lines.push(rec.description);
+					if (rec.evidence.length > 0) {
+						for (const e of rec.evidence) lines.push(`  - ${e}`);
+					}
+					lines.push("");
+				}
+			}
+			if (data.checklist?.length > 0) {
+				lines.push("Checklist");
+				for (const item of data.checklist) {
+					lines.push(
+						`[${item.required ? "required" : "optional"}] ${item.text}`,
+					);
+				}
+				lines.push("");
+			}
+			if (data.example_prs?.length > 0) {
+				lines.push("Example PRs");
+				for (const pr of data.example_prs) {
+					lines.push(`#${pr.number} ${pr.title}`);
+					lines.push(pr.url);
+					lines.push(pr.summary);
+					lines.push("");
+				}
+			}
+		}
+		return lines.join("\n");
+	};
+
+	const handleCopy = async () => {
+		try {
+			await navigator.clipboard.writeText(buildCopyText());
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		} catch {
+			// silent fail
+		}
+	};
 
 	return (
 		<motion.div
@@ -337,6 +407,18 @@ export function RepoPatternPanel({
 							size={14}
 							className={isFetching ? "animate-spin will-change-transform" : ""}
 						/>
+					</button>
+					<button
+						type="button"
+						onClick={handleCopy}
+						className="hover:bg-white/5 p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+						title="Copy content"
+					>
+						{copied ? (
+							<ClipboardCheck size={14} className="text-emerald-400" />
+						) : (
+							<Clipboard size={14} />
+						)}
 					</button>
 					<button
 						type="button"
