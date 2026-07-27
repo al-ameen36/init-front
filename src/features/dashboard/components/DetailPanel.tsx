@@ -3,6 +3,8 @@ import {
 	ArrowRight,
 	Check,
 	Circle,
+	Clipboard,
+	ClipboardCheck,
 	Code2,
 	ExternalLink,
 	FileCode,
@@ -13,6 +15,7 @@ import {
 	Zap,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { useState } from "react";
 import type { DeveloperProfile } from "@/features/onboarding/components/data";
 import { hasSkill } from "@/lib/skills";
 import { MatchRing } from "../../../components/MatchRing";
@@ -48,9 +51,56 @@ export function DetailPanel({
 	const investigationPath = issue?.guide?.investigation_path ?? [];
 	const requiredSkills = issue?.guide?.required_skills ?? [];
 	const issueUrl = basicIssue?.url ?? null;
+	const [copied, setCopied] = useState(false);
 
 	const fileUrl = (file: string) =>
 		`https://github.com/${repo}/blob/HEAD/${file}`;
+
+	const buildCopyText = () => {
+		const lines: string[] = [];
+		lines.push(`${repo}`);
+		lines.push(`${title}`);
+		lines.push("");
+		if (matchScore !== undefined) lines.push(`Match Score: ${matchScore}`);
+		lines.push("");
+		if (difficulty) lines.push(`Difficulty: ${difficulty}`);
+		lines.push(`Comments: ${comments}`);
+		lines.push(`Opened: ${opened}`);
+		lines.push("");
+		lines.push("Summary");
+		lines.push(summary || "—");
+		lines.push("");
+		lines.push("Skills needed");
+		lines.push(requiredSkills.length > 0 ? requiredSkills.join(", ") : "—");
+		lines.push("");
+		lines.push("Relevant files");
+		if (relevantFiles.length > 0) {
+			for (const file of relevantFiles) lines.push(`- ${file}`);
+		} else {
+			lines.push("—");
+		}
+		lines.push("");
+		lines.push("Investigation path");
+		if (investigationPath.length > 0) {
+			for (let i = 0; i < investigationPath.length; i++)
+				lines.push(`${i + 1}. ${investigationPath[i]}`);
+		} else {
+			lines.push("—");
+		}
+		lines.push("");
+		if (issueUrl) lines.push(`GitHub: ${issueUrl}`);
+		return lines.join("\n");
+	};
+
+	const handleCopy = async () => {
+		try {
+			await navigator.clipboard.writeText(buildCopyText());
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		} catch {
+			// silent fail
+		}
+	};
 
 	return (
 		<motion.div
@@ -80,6 +130,18 @@ export function DetailPanel({
 						{title}
 					</h2>
 				</div>
+				<button
+					type="button"
+					onClick={handleCopy}
+					className="hover:bg-white/5 p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors shrink-0"
+					title="Copy content"
+				>
+					{copied ? (
+						<ClipboardCheck size={15} className="text-emerald-400" />
+					) : (
+						<Clipboard size={15} />
+					)}
+				</button>
 				<button
 					type="button"
 					onClick={onClose}
