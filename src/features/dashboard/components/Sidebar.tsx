@@ -20,7 +20,7 @@ const NAV: {
 }[] = [
 	{ id: "matches", icon: Compass, label: "Matches" },
 	{ id: "repos", icon: GitBranch, label: "Repositories" },
-	{ id: "active", icon: GitPullRequest, label: "Active", soon: true },
+	{ id: "active", icon: GitPullRequest, label: "Active" },
 	{ id: "skills", icon: BarChart3, label: "Skills" },
 ];
 
