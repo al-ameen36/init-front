@@ -50,7 +50,6 @@ Always run `pnpm check` (Biome) and `pnpm tsc --noEmit` after edits.
 
 ## Gotchas
 
-- `routes/_dashboard/_layout.active.tsx` uses hardcoded placeholder data.
 - `Issue` types live in `src/features/dashboard/types.ts`.
 - `vite.config.ts` uses `manualChunks` to split `recharts` and `motion` into
   separate cached chunks. Main bundle: ~566 KB min / ~165 KB gzip.
