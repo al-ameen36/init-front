@@ -1,29 +1,5 @@
 import type { AnalysisPhase } from "./types";
 
-export const USER = {
-	name: "Mara Solis",
-	handle: "marasolis",
-	avatar:
-		"https://images.unsplash.com/photo-1580489944761-15a19d654956?w=80&h=80&fit=crop&auto=format",
-	prs: 127,
-	repos: 34,
-	streak: 12,
-};
-
-export const SKILL_RADAR = [
-	{ skill: "TypeScript", value: 91 },
-	{ skill: "React", value: 88 },
-	{ skill: "Next.js", value: 82 },
-	{ skill: "REST APIs", value: 76 },
-	{ skill: "Node.js", value: 68 },
-	{ skill: "Testing", value: 61 },
-];
-
-export const ACTIVITY = [
-	4, 0, 2, 7, 3, 0, 0, 5, 8, 2, 1, 0, 6, 4, 0, 0, 3, 9, 5, 2, 0, 1, 4, 7, 3, 0,
-	2, 5,
-];
-
 export const REPO_ANALYSIS_PHASES: {
 	id: AnalysisPhase;
 	label: string;
