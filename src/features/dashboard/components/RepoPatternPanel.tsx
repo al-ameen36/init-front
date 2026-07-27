@@ -276,12 +276,17 @@ export function RepoPatternPanel({
 	const setStatusRef = useRef(setStatusMsg);
 	setStatusRef.current = setStatusMsg;
 
-	const { data, isLoading, isError, isFetching, error } = useQuery({
+	const forceRefetch = useRef(false);
+
+	const { data, isLoading, isError, isFetching, error, refetch } = useQuery({
 		queryKey: ["repoPattern", repo],
 		retry: false,
-		queryFn: ({ signal }) =>
-			fetchRepoPattern(repo, 5, {
+		queryFn: ({ signal }) => {
+			const force = forceRefetch.current;
+			forceRefetch.current = false;
+			return fetchRepoPattern(repo, 5, {
 				signal,
+				force,
 				onEvent: (e) => {
 					if (e.type === "status" || e.type === "progress") {
 						setStatusRef.current(e.message);
@@ -289,16 +294,19 @@ export function RepoPatternPanel({
 						setStatusRef.current(null);
 					}
 				},
-			}),
+			});
+		},
 	});
 
 	const [tab, setTab] = useState<Tab>("summary");
 	const [copied, setCopied] = useState(false);
 
 	const handleRefresh = useCallback(() => {
+		queryClient.removeQueries({ queryKey: ["repoPattern", repo] });
+		forceRefetch.current = true;
+		refetch();
 		setStatusMsg("Starting analysis…");
-		queryClient.invalidateQueries({ queryKey: ["repoPattern", repo] });
-	}, [queryClient, repo]);
+	}, [queryClient, repo, refetch]);
 
 	const buildCopyText = () => {
 		const lines: string[] = [];
