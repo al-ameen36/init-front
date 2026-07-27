@@ -323,3 +323,22 @@ export function toggleActiveIssue(
 		body: JSON.stringify({ repo, issue_number: issueNumber }),
 	});
 }
+
+export type MergedPRResult = {
+	repo: string;
+	issue_number: number;
+	merged: boolean;
+	pr_number: number | null;
+	pr_url: string | null;
+	pr_title: string | null;
+};
+
+export function checkMergedPRs(
+	issues: { repo: string; issue_number: number }[],
+): Promise<MergedPRResult[]> {
+	return request<MergedPRResult[]>("/active-issues/check", {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify(issues),
+	});
+}

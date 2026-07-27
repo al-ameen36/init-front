@@ -1,4 +1,9 @@
-import { AlertTriangle, Clock, MessageSquare } from "lucide-react";
+import {
+	AlertTriangle,
+	Clock,
+	ExternalLink,
+	MessageSquare,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { DifficultyBadge } from "../../../components/DifficultyBadge";
 import { MatchRing } from "../../../components/MatchRing";
@@ -10,11 +15,17 @@ export function IssueCard({
 	isSelected,
 	onClick,
 	onToggleActive,
+	mergedPr,
 }: {
 	issue: Issue;
 	isSelected: boolean;
 	onClick: () => void;
 	onToggleActive?: () => void;
+	mergedPr?: {
+		merged: boolean;
+		pr_number: number | null;
+		pr_url: string | null;
+	} | null;
 }) {
 	const matchScore = issue.matchScore;
 	const difficulty = issue.difficulty;
@@ -64,6 +75,18 @@ export function IssueCard({
 				)}
 			</div>
 			<div className="flex flex-wrap items-center gap-1.5">
+				{mergedPr?.merged && mergedPr.pr_url ? (
+					<a
+						href={mergedPr.pr_url}
+						target="_blank"
+						rel="noopener noreferrer"
+						onClick={(e) => e.stopPropagation()}
+						className="flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-sm font-mono text-[10px] text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+					>
+						PR #{mergedPr.pr_number}
+						<ExternalLink size={8} />
+					</a>
+				) : null}
 				{isAnalyzed && difficulty && <DifficultyBadge level={difficulty} />}
 				{issue.labels.slice(0, 2).map((l) => (
 					<span
