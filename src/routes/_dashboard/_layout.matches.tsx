@@ -15,7 +15,13 @@ import { DetailPanel } from "#/features/dashboard/components/DetailPanel";
 import { IssueCard } from "#/features/dashboard/components/IssueCard";
 import { Topbar } from "#/features/dashboard/components/Topbar";
 import type { AnalyzeIssueResponse, Issue } from "#/features/dashboard/types";
-import { analyzeIssuesStream, fetchIssues } from "#/lib/api";
+import type { ActiveIssue } from "#/lib/api";
+import {
+	analyzeIssuesStream,
+	fetchActiveIssues,
+	fetchIssues,
+	toggleActiveIssue,
+} from "#/lib/api";
 import { useProfile } from "@/context/ProfileContext";
 import { useRepos } from "@/context/RepoContext";
 
@@ -56,6 +62,15 @@ function RouteComponent() {
 		initialFailed.issues,
 	);
 	const [batchError, setBatchError] = useState(initialFailed.batch);
+
+	// Active issues (bookmarked by the user).
+	const { data: activeIssues = [] } = useQuery({
+		queryKey: ["active-issues"],
+		queryFn: fetchActiveIssues,
+	});
+	const activeSet = new Set(
+		activeIssues.map((a: ActiveIssue) => `${a.repo}#${a.issue_number}`),
+	);
 
 	// Track in-flight refetches so the UI can show a loading state on a manual
 	// refresh. React Query's `isLoading` stays false when cached data exists,
@@ -178,6 +193,7 @@ function RouteComponent() {
 		const data = analysisMap.get(issue.number);
 		return {
 			...issue,
+			isActive: activeSet.has(`${issue.repo}#${issue.number}`),
 			difficulty: data?.guide.difficulty,
 			matchScore: data?.matchScore,
 			analysisStatus: data
@@ -222,6 +238,30 @@ function RouteComponent() {
 				queryKey: ["analyze-batch", activeRepo, profileKey],
 			});
 			queryClient.setQueryData(failedKey, { issues: {}, batch: false });
+		}
+	};
+
+	const handleToggleActive = async (repo: string, issueNumber: number) => {
+		const key = `${repo}#${issueNumber}`;
+		const wasActive = activeSet.has(key);
+		// Optimistic update
+		queryClient.setQueryData<ActiveIssue[]>(["active-issues"], (prev) =>
+			wasActive
+				? (prev?.filter((a) => `${a.repo}#${a.issue_number}` !== key) ?? [])
+				: [
+						...(prev ?? []),
+						{
+							repo,
+							issue_number: issueNumber,
+							created_at: new Date().toISOString(),
+						},
+					],
+		);
+		try {
+			await toggleActiveIssue(repo, issueNumber);
+		} catch {
+			// Revert on failure
+			void queryClient.invalidateQueries({ queryKey: ["active-issues"] });
 		}
 	};
 
@@ -408,6 +448,12 @@ function RouteComponent() {
 												issue={issue}
 												isSelected={selectedId === issue.number}
 												onClick={() => handleAnalyze(issue.number)}
+												onToggleActive={() =>
+													handleToggleActive(
+														issue.repo ?? (activeRepo as string),
+														issue.number,
+													)
+												}
 											/>
 										))}
 									</AnimatePresence>
@@ -445,6 +491,16 @@ function RouteComponent() {
 											isAnalyzing={isAnalyzingSelected}
 											onClose={() => setSelectedId(null)}
 											onRetry={handleRefresh}
+											onToggleActive={() => {
+												const sel = displayIssues.find(
+													(i) => i.number === selectedId,
+												);
+												if (sel)
+													handleToggleActive(
+														sel.repo ?? (activeRepo as string),
+														sel.number,
+													);
+											}}
 											profile={profile}
 										/>
 									</div>

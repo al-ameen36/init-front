@@ -20,6 +20,7 @@ import type { DeveloperProfile } from "@/features/onboarding/components/data";
 import { hasSkill } from "@/lib/skills";
 import { MatchRing } from "../../../components/MatchRing";
 import type { AnalyzeIssueResponse, Issue } from "../types";
+import { BookmarkButton } from "./BookmarkButton";
 
 export function DetailPanel({
 	issue,
@@ -27,6 +28,7 @@ export function DetailPanel({
 	isAnalyzing,
 	onClose,
 	onRetry,
+	onToggleActive,
 	profile,
 }: {
 	issue: AnalyzeIssueResponse | null;
@@ -34,6 +36,7 @@ export function DetailPanel({
 	isAnalyzing: boolean;
 	onClose: () => void;
 	onRetry?: () => void;
+	onToggleActive?: () => void;
 	profile: DeveloperProfile;
 }) {
 	const isError = basicIssue?.analysisStatus === "error";
@@ -142,6 +145,13 @@ export function DetailPanel({
 						<Clipboard size={15} />
 					)}
 				</button>
+				{onToggleActive && (
+					<BookmarkButton
+						isActive={!!basicIssue?.isActive}
+						onClick={onToggleActive}
+						size={15}
+					/>
+				)}
 				<button
 					type="button"
 					onClick={onClose}

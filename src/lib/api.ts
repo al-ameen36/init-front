@@ -298,3 +298,28 @@ export async function clearBackendSession(): Promise<void> {
 		credentials: "include",
 	}).catch(() => {});
 }
+
+// ---------------------------------------------------------------------------
+// Active issues
+// ---------------------------------------------------------------------------
+
+export type ActiveIssue = {
+	repo: string;
+	issue_number: number;
+	created_at: string;
+};
+
+export function fetchActiveIssues(): Promise<ActiveIssue[]> {
+	return request<ActiveIssue[]>("/active-issues");
+}
+
+export function toggleActiveIssue(
+	repo: string,
+	issueNumber: number,
+): Promise<{ active: boolean }> {
+	return request<{ active: boolean }>("/active-issues", {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ repo, issue_number: issueNumber }),
+	});
+}

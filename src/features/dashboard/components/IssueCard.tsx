@@ -3,15 +3,18 @@ import { motion } from "motion/react";
 import { DifficultyBadge } from "../../../components/DifficultyBadge";
 import { MatchRing } from "../../../components/MatchRing";
 import type { Issue } from "../types";
+import { BookmarkButton } from "./BookmarkButton";
 
 export function IssueCard({
 	issue,
 	isSelected,
 	onClick,
+	onToggleActive,
 }: {
 	issue: Issue;
 	isSelected: boolean;
 	onClick: () => void;
+	onToggleActive?: () => void;
 }) {
 	const matchScore = issue.matchScore;
 	const difficulty = issue.difficulty;
@@ -52,6 +55,13 @@ export function IssueCard({
 						{issue.title}
 					</div>
 				</div>
+				{onToggleActive && (
+					<BookmarkButton
+						isActive={!!issue.isActive}
+						onClick={onToggleActive}
+						className="absolute top-3 right-3"
+					/>
+				)}
 			</div>
 			<div className="flex flex-wrap items-center gap-1.5">
 				{isAnalyzed && difficulty && <DifficultyBadge level={difficulty} />}

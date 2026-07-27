@@ -9,6 +9,7 @@ export type Issue = {
 	matchScore?: number;
 	difficulty?: "Low" | "Medium" | "High";
 	analysisStatus?: "idle" | "analyzing" | "done" | "error";
+	isActive?: boolean;
 };
 
 export type IssuesResponse = {
