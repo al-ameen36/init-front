@@ -10,12 +10,9 @@ import {
 import { motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { Topbar } from "#/features/dashboard/components/Topbar";
-import type { ActiveIssue, MergedPRResult } from "#/lib/api";
-import {
-	checkMergedPRs,
-	fetchActiveIssues,
-	toggleActiveIssue,
-} from "#/lib/api";
+import type { ActiveIssue, IssuePR } from "#/lib/api";
+import { fetchActiveIssues, fetchIssuePRs, toggleActiveIssue } from "#/lib/api";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/_dashboard/_layout/active")({
 	component: RouteComponent,
@@ -29,36 +26,41 @@ function RouteComponent() {
 		queryFn: fetchActiveIssues,
 	});
 
-	const [mergedMap, setMergedMap] = useState<Record<string, MergedPRResult>>(
-		{},
-	);
+	const [myPrs, setMyPrs] = useState<Record<string, IssuePR[]>>({});
 	const [checking, setChecking] = useState(false);
 
-	const checkMerged = useCallback(async (issues: ActiveIssue[]) => {
+	const fetchMyPRs = useCallback(async (issues: ActiveIssue[]) => {
 		if (issues.length === 0) return;
 		setChecking(true);
 		try {
-			const results = await checkMergedPRs(
-				issues.map((i) => ({
-					repo: i.repo,
-					issue_number: i.issue_number,
-				})),
+			const { data: sessionData } = await supabase.auth.getSession();
+			const user = sessionData.session?.user;
+			const username =
+				(user?.user_metadata?.github_username as string | undefined) ||
+				(user?.user_metadata?.preferred_username as string | undefined);
+			if (!username) return;
+
+			const results = await Promise.all(
+				issues.map(async (i) => {
+					const pulls = await fetchIssuePRs(i.repo, i.issue_number);
+					return {
+						key: `${i.repo}#${i.issue_number}`,
+						prs: pulls.filter((p) => p.author === username),
+					};
+				}),
 			);
-			setMergedMap(
-				Object.fromEntries(
-					results.map((r) => [`${r.repo}#${r.issue_number}`, r]),
-				),
-			);
+
+			setMyPrs(Object.fromEntries(results.map((r) => [r.key, r.prs])));
 		} catch {
-			// silent — merge status is best-effort
+			// silent — PR status is best-effort
 		} finally {
 			setChecking(false);
 		}
 	}, []);
 
 	useEffect(() => {
-		if (activeIssues.length > 0) checkMerged(activeIssues);
-	}, [activeIssues, checkMerged]);
+		if (activeIssues.length > 0) fetchMyPRs(activeIssues);
+	}, [activeIssues, fetchMyPRs]);
 
 	const handleRemove = async (repo: string, issueNumber: number) => {
 		await toggleActiveIssue(repo, issueNumber);
@@ -69,11 +71,39 @@ function RouteComponent() {
 					(a) => !(a.repo === repo && a.issue_number === issueNumber),
 				) ?? [],
 		);
-		setMergedMap((prev) => {
+		setMyPrs((prev) => {
 			const next = { ...prev };
 			delete next[`${repo}#${issueNumber}`];
 			return next;
 		});
+	};
+
+	const prBadge = (prs: IssuePR[]) => {
+		const merged = prs.find((p) => p.state === "merged");
+		const open = prs.find((p) => p.state === "open");
+		const closed = prs.find((p) => p.state === "closed");
+		const best = merged ?? open ?? closed;
+		if (!best) return null;
+
+		const dotColor =
+			best.state === "merged"
+				? "bg-emerald-400"
+				: best.state === "open"
+					? "bg-blue-400"
+					: "bg-muted-foreground";
+
+		return (
+			<a
+				href={best.url}
+				target="_blank"
+				rel="noopener noreferrer"
+				className="flex items-center gap-1.5 border border-border/60 px-3 py-1.5 rounded-lg font-mono text-[11px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
+			>
+				<span className={`shrink-0 w-1.5 h-1.5 rounded-full ${dotColor}`} />
+				PR #{best.number}
+				<ExternalLink size={10} />
+			</a>
+		);
 	};
 
 	return (
@@ -85,7 +115,7 @@ function RouteComponent() {
 				{activeIssues.length > 0 && (
 					<button
 						type="button"
-						onClick={() => checkMerged(activeIssues)}
+						onClick={() => fetchMyPRs(activeIssues)}
 						disabled={checking}
 						className="flex items-center gap-1.5 bg-white/4 hover:bg-white/6 px-3 py-1.5 rounded-lg font-mono text-[11px] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
 					>
@@ -129,14 +159,14 @@ function RouteComponent() {
 					<div className="space-y-3">
 						{activeIssues.map((item, i) => {
 							const key = `${item.repo}#${item.issue_number}`;
-							const merged = mergedMap[key];
+							const prs = myPrs[key] ?? [];
 							return (
 								<motion.div
 									key={key}
 									initial={{ opacity: 0, y: 10 }}
 									animate={{ opacity: 1, y: 0 }}
 									transition={{ delay: i * 0.05 }}
-									className="group flex items-center gap-4 bg-card p-4 border border-border rounded-xl"
+									className="group flex items-center gap-4 bg-card p-4 border border-border rounded-xl overflow-hidden"
 								>
 									<div className="flex justify-center items-center bg-muted/40 border border-border rounded-lg w-9 h-9 shrink-0">
 										<GitBranch size={16} className="text-muted-foreground" />
@@ -153,16 +183,8 @@ function RouteComponent() {
 										</div>
 									</div>
 									<div className="flex items-center gap-2 shrink-0">
-										{merged?.merged && merged.pr_url ? (
-											<a
-												href={merged.pr_url}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg font-mono text-[11px] text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-											>
-												PR #{merged.pr_number}
-												<ExternalLink size={10} />
-											</a>
+										{prs.length > 0 ? (
+											prBadge(prs)
 										) : (
 											<a
 												href={`https://github.com/${item.repo}/issues/${item.issue_number}`}

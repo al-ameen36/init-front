@@ -342,3 +342,21 @@ export function checkMergedPRs(
 		body: JSON.stringify(issues),
 	});
 }
+
+export type IssuePR = {
+	number: number;
+	title: string;
+	url: string;
+	state: "merged" | "open" | "closed";
+	author: string;
+	author_url: string;
+};
+
+export function fetchIssuePRs(
+	repo: string,
+	issueNumber: number,
+): Promise<IssuePR[]> {
+	return request<IssuePR[]>(
+		`/active-issues/pulls?repo=${encodeURIComponent(repo)}&issue_number=${issueNumber}`,
+	);
+}

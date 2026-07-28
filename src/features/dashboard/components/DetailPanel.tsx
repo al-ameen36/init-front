@@ -8,14 +8,18 @@ import {
 	Code2,
 	ExternalLink,
 	FileCode,
+	GitPullRequest,
 	ListChecks,
+	Loader2,
 	RefreshCw,
 	Wrench,
 	X,
 	Zap,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { IssuePR } from "#/lib/api";
+import { fetchIssuePRs } from "#/lib/api";
 import type { DeveloperProfile } from "@/features/onboarding/components/data";
 import { hasSkill } from "@/lib/skills";
 import { MatchRing } from "../../../components/MatchRing";
@@ -55,6 +59,31 @@ export function DetailPanel({
 	const requiredSkills = issue?.guide?.required_skills ?? [];
 	const issueUrl = basicIssue?.url ?? null;
 	const [copied, setCopied] = useState(false);
+	const [othersPrs, setOthersPrs] = useState<IssuePR[]>([]);
+	const [prsLoading, setPrsLoading] = useState(false);
+
+	useEffect(() => {
+		const repo = basicIssue?.repo;
+		const number = basicIssue?.number;
+		if (!repo || !number) return;
+		let cancelled = false;
+		setPrsLoading(true);
+		(async () => {
+			try {
+				const pulls = await fetchIssuePRs(repo, number);
+				if (!cancelled) {
+					setOthersPrs(pulls);
+				}
+			} catch {
+				if (!cancelled) setOthersPrs([]);
+			} finally {
+				if (!cancelled) setPrsLoading(false);
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [basicIssue?.repo, basicIssue?.number]);
 
 	const fileUrl = (file: string) =>
 		`https://github.com/${repo}/blob/HEAD/${file}`;
@@ -180,6 +209,67 @@ export function DetailPanel({
 											: "—"}
 						</div>
 					</div>
+				</div>
+
+				<div>
+					<div className="flex items-center gap-1.5 mb-2.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
+						<GitPullRequest size={9} />
+						Related PRs
+					</div>
+					{prsLoading ? (
+						<div className="flex items-center gap-2 py-2 text-muted-foreground text-xs">
+							<Loader2 size={12} className="animate-spin" />
+							Finding related PRs…
+						</div>
+					) : othersPrs.length > 0 ? (
+						<div className="space-y-1.5">
+							{othersPrs.map((pr) => {
+								const stateLabel =
+									pr.state === "merged"
+										? "Merged"
+										: pr.state === "open"
+											? "Open"
+											: "Closed";
+								const stateColor =
+									pr.state === "merged"
+										? "text-emerald-400"
+										: pr.state === "open"
+											? "text-blue-400"
+											: "text-muted-foreground";
+								return (
+									<a
+										key={pr.number}
+										href={pr.url}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="group flex items-start gap-2.5 bg-muted/20 px-3 py-2 border border-border/60 hover:border-white/12 rounded-md transition-colors cursor-pointer overflow-hidden"
+									>
+										<div className="flex-1 min-w-0">
+											<span className="font-mono text-[11px] text-foreground/80 group-hover:text-foreground truncate transition-colors">
+												#{pr.number} {pr.title}
+											</span>
+											<div className="flex items-center gap-2 mt-0.5">
+												<span className="font-mono text-[10px] text-muted-foreground">
+													{pr.author}
+												</span>
+												<span className={`font-mono text-[10px] ${stateColor}`}>
+													{stateLabel}
+												</span>
+											</div>
+										</div>
+										<ExternalLink
+											size={9}
+											className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0 mt-1.5"
+										/>
+									</a>
+								);
+							})}
+						</div>
+					) : (
+						<p className="text-muted-foreground text-xs">
+							No related PRs found for this issue.
+						</p>
+					)}
 				</div>
 
 				<div className="gap-2 grid grid-cols-3">
