@@ -59,6 +59,59 @@ export function fetchRepoMeta(owner: string, name: string): Promise<RepoMeta> {
 	return request<RepoMeta>(`/repo/${owner}/${name}`);
 }
 
+export type RepoItem = {
+	id: string;
+	owner: string;
+	name: string;
+	active: boolean;
+};
+
+export function fetchRepos(): Promise<RepoItem[]> {
+	return request<RepoItem[]>("/repos");
+}
+
+export function addRepo(url: string): Promise<RepoItem> {
+	return request<RepoItem>("/repos", {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ url }),
+	});
+}
+
+export function deleteRepo(owner: string, name: string): Promise<void> {
+	return request<void>(`/repos/${owner}/${name}`, { method: "DELETE" });
+}
+
+export function activateRepo(owner: string, name: string): Promise<RepoItem> {
+	return request<RepoItem>("/repos/activate", {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ owner, name }),
+	});
+}
+
+export function fetchRepoPRProfile(
+	repo: string,
+): Promise<ContributorPlaybook | null> {
+	return request<ContributorPlaybook | null>(
+		`/repo/pr-profile?repo=${encodeURIComponent(repo)}`,
+	);
+}
+
+export function fetchProfile(): Promise<DeveloperProfile | null> {
+	return request<DeveloperProfile | null>("/profile");
+}
+
+export function saveProfile(
+	profile: DeveloperProfile,
+): Promise<Record<string, string>> {
+	return request<Record<string, string>>("/profile", {
+		method: "PUT",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify(profile),
+	});
+}
+
 export type AnalyzeStreamEvent =
 	| { type: "status"; stage: string; message: string }
 	| { type: "result"; analysis: AnalyzeIssueResponse }
