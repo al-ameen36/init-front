@@ -14,7 +14,7 @@ type RepoContextValue = {
 	repos: RepoItem[];
 	activeRepo: string | null;
 	loading: boolean;
-	addRepo: (url: string) => Promise<void>;
+	addRepo: (url: string) => Promise<string | undefined>;
 	removeRepo: (full: string) => Promise<void>;
 	setActiveRepo: (full: string) => Promise<void>;
 };
@@ -43,8 +43,9 @@ export function RepoProvider({ children }: { children: ReactNode }) {
 			await setActiveRepo(full);
 			return;
 		}
-		await apiAddRepo(url);
+		const result = await apiAddRepo(url);
 		await queryClient.invalidateQueries({ queryKey: REPOS_KEY });
+		return result.job_id;
 	};
 
 	const setActiveRepo = async (full: string) => {

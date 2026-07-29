@@ -154,6 +154,9 @@ export function DetailPanel({
 						>
 							{repo}
 						</a>
+						<span className="text-muted-foreground/50">
+							#{basicIssue?.number}
+						</span>
 						<span className="px-1.5 py-0.5 border border-border/50 rounded text-[9px]">
 							{language}
 						</span>

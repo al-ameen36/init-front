@@ -55,6 +55,9 @@ export function IssueCard({
 						<span className="font-mono text-[10px] text-muted-foreground">
 							{repoName}
 						</span>
+						<span className="font-mono text-[10px] text-muted-foreground/50">
+							#{issue.number}
+						</span>
 						{isError && (
 							<span className="flex items-center gap-1 font-mono text-[10px] text-destructive/80">
 								<AlertTriangle size={9} />

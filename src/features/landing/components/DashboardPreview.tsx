@@ -115,6 +115,9 @@ export function DashboardPreview({
 										<div>
 											<div className="mb-1 font-mono text-[10px] text-muted-foreground">
 												{issue.repo}
+												<span className="ml-2 text-muted-foreground/50">
+													#{issue.id}
+												</span>
 											</div>
 											<div className="font-medium text-foreground group-hover:text-white text-sm leading-snug transition-colors">
 												{issue.title}

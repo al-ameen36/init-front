@@ -19,7 +19,7 @@ import { AddRepoModal } from "#/features/dashboard/components/AddRepo";
 import { RepoPatternPanel } from "#/features/dashboard/components/RepoPatternPanel";
 import { Topbar } from "#/features/dashboard/components/Topbar";
 import { LANG_COLOR } from "#/features/dashboard/data";
-import { fetchRepoMeta, fetchRepoPRProfile } from "#/lib/api";
+import { fetchRepoMeta, fetchRepoPRProfile, SERVER_URL } from "#/lib/api";
 import { type RepoItem, useRepos } from "@/context/RepoContext";
 
 export const Route = createFileRoute("/_dashboard/_layout/repos")({
@@ -298,6 +298,7 @@ function RouteComponent() {
 	const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
 		undefined,
 	);
+	const activeJobs = useRef<Map<string, EventSource>>(new Map());
 
 	const notify = (
 		status: "loading" | "success",
@@ -312,17 +313,55 @@ function RouteComponent() {
 	};
 
 	useEffect(() => {
-		return () => clearTimeout(toastTimer.current);
+		return () => {
+			clearTimeout(toastTimer.current);
+			for (const es of activeJobs.current.values()) {
+				es.close();
+			}
+		};
 	}, []);
 
 	const handleAdd = async (url: string) => {
 		setShowAdd(false);
-		notify("loading", "Adding repository & starting PR analysis…");
-		await addRepo(url);
-		notify(
-			"success",
-			"Repository added — learning PR patterns in the background",
-		);
+		notify("loading", "Adding repository & starting PR analysis…", false);
+		const jobId = await addRepo(url);
+		if (jobId) {
+			const es = new EventSource(`${SERVER_URL}/pr-pattern/events/${jobId}`, {
+				withCredentials: true,
+			});
+			activeJobs.current.set(jobId, es);
+			es.addEventListener("progress", (e) => {
+				const parsed = JSON.parse(e.data);
+				const d = parsed.data ?? {};
+				notify(
+					"loading",
+					`Analyzing PRs… ${d.current ?? "?"}/${d.total ?? "?"}`,
+					false,
+				);
+			});
+			const finish = (msg: string) => {
+				notify("success", msg);
+				es.close();
+				activeJobs.current.delete(jobId);
+			};
+			es.addEventListener("completed", (e) => {
+				const parsed = JSON.parse(e.data);
+				const d = parsed.data ?? {};
+				finish(
+					d.prs_analyzed
+						? `PR analysis complete — ${d.prs_analyzed} PRs analyzed`
+						: "Repository added",
+				);
+			});
+			es.addEventListener("error", () => {
+				finish("Repository added");
+			});
+			es.onerror = () => {
+				finish("Repository added — PR patterns ready");
+			};
+		} else {
+			notify("success", "Repository added");
+		}
 	};
 
 	const handleActivate = async (full: string) => {

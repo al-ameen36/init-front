@@ -64,6 +64,7 @@ export type RepoItem = {
 	owner: string;
 	name: string;
 	active: boolean;
+	job_id?: string;
 };
 
 export function fetchRepos(): Promise<RepoItem[]> {

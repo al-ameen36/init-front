@@ -43,6 +43,7 @@ export function IssueDetail({
 					<div className="flex-1 min-w-0">
 						<div className="flex items-center gap-2 mb-1 font-mono text-[10px] text-muted-foreground">
 							<span>{issue.repo}</span>
+							<span className="text-muted-foreground/50">#{issue.id}</span>
 							<span className="text-border">·</span>
 							<DifficultyBadge level={issue.difficulty} />
 						</div>
