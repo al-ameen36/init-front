@@ -65,7 +65,19 @@ export type RepoItem = {
 	name: string;
 	active: boolean;
 	job_id?: string;
+	playbook_state?: string;
+	graph_state?: string;
 };
+
+export function repoAnalysisState(repo: RepoItem): string {
+	if (repo.playbook_state === "error" || repo.graph_state === "error")
+		return "error";
+	if (repo.playbook_state === "running" || repo.graph_state === "running")
+		return "analyzing";
+	if (repo.playbook_state === "done" && repo.graph_state === "done")
+		return "ready";
+	return "pending";
+}
 
 export function fetchRepos(): Promise<RepoItem[]> {
 	return request<RepoItem[]>("/repos");

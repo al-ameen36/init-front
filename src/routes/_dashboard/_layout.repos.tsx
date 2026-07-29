@@ -19,8 +19,13 @@ import { AddRepoModal } from "#/features/dashboard/components/AddRepo";
 import { RepoPatternPanel } from "#/features/dashboard/components/RepoPatternPanel";
 import { Topbar } from "#/features/dashboard/components/Topbar";
 import { LANG_COLOR } from "#/features/dashboard/data";
-import { fetchRepoMeta, fetchRepoPRProfile, SERVER_URL } from "#/lib/api";
-import { type RepoItem, useRepos } from "@/context/RepoContext";
+import {
+	fetchRepoMeta,
+	type RepoItem,
+	repoAnalysisState,
+	SERVER_URL,
+} from "#/lib/api";
+import { useRepos } from "@/context/RepoContext";
 
 export const Route = createFileRoute("/_dashboard/_layout/repos")({
 	component: RouteComponent,
@@ -57,13 +62,7 @@ function RepoCard({
 		staleTime: 5 * 60 * 1000,
 	});
 
-	const repoFull = `${repo.owner}/${repo.name}`;
-	const { data: prProfile } = useQuery({
-		queryKey: ["repoPRProfile", repo.owner, repo.name],
-		queryFn: () => fetchRepoPRProfile(repoFull),
-		staleTime: 30_000,
-		retry: false,
-	});
+	const analysisState = repoAnalysisState(repo);
 
 	return (
 		<motion.div
@@ -88,18 +87,23 @@ function RepoCard({
 						<span className="font-medium text-foreground text-sm">
 							{repo.name}
 						</span>
-						{prProfile === null && (
+						{analysisState === "analyzing" && (
 							<span className="flex items-center gap-1 ml-auto px-2 py-0.5 rounded-full font-mono text-[10px] text-amber-400">
 								<Loader2
 									size={9}
 									className="animate-spin will-change-transform"
 								/>
-								Learning PR patterns…
+								Analyzing repo…
 							</span>
 						)}
-						{prProfile && (
+						{analysisState === "ready" && (
 							<span className="ml-auto px-2 py-0.5 rounded-full font-mono text-[10px] text-emerald-400">
-								PR patterns learned
+								Ready
+							</span>
+						)}
+						{analysisState === "error" && (
+							<span className="ml-auto px-2 py-0.5 rounded-full font-mono text-[10px] text-red-400">
+								Analysis failed
 							</span>
 						)}
 						{active && (

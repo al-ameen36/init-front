@@ -13,6 +13,7 @@ export type { RepoItem };
 type RepoContextValue = {
 	repos: RepoItem[];
 	activeRepo: string | null;
+	activeRepoItem: RepoItem | null;
 	loading: boolean;
 	addRepo: (url: string) => Promise<string | undefined>;
 	removeRepo: (full: string) => Promise<void>;
@@ -32,6 +33,7 @@ export function RepoProvider({ children }: { children: ReactNode }) {
 	const { data: repos = [], isLoading: loading } = useQuery({
 		queryKey: REPOS_KEY,
 		queryFn: fetchRepos,
+		refetchInterval: 5000,
 	});
 
 	const addRepo = async (url: string) => {
@@ -67,10 +69,19 @@ export function RepoProvider({ children }: { children: ReactNode }) {
 	const active =
 		repos.find((r) => r.active) ?? (repos.length > 0 ? repos[0] : undefined);
 	const activeRepo = active ? `${active.owner}/${active.name}` : null;
+	const activeRepoItem = active ?? null;
 
 	return (
 		<RepoContext.Provider
-			value={{ repos, activeRepo, loading, addRepo, removeRepo, setActiveRepo }}
+			value={{
+				repos,
+				activeRepo,
+				activeRepoItem,
+				loading,
+				addRepo,
+				removeRepo,
+				setActiveRepo,
+			}}
 		>
 			{children}
 		</RepoContext.Provider>

@@ -20,6 +20,7 @@ import {
 	analyzeIssuesStream,
 	fetchActiveIssues,
 	fetchIssues,
+	repoAnalysisState,
 	toggleActiveIssue,
 } from "#/lib/api";
 import { useProfile } from "@/context/ProfileContext";
@@ -35,7 +36,7 @@ export const Route = createFileRoute("/_dashboard/_layout/matches")({
 
 function RouteComponent() {
 	const { profile } = useProfile();
-	const { activeRepo, loading: reposLoading } = useRepos();
+	const { activeRepo, activeRepoItem, loading: reposLoading } = useRepos();
 	const queryClient = useQueryClient();
 	const profileKey = profile?.username ?? "anon";
 	const analyzeKey = ["analyze-batch", activeRepo, profileKey] as const;
@@ -58,6 +59,10 @@ function RouteComponent() {
 	);
 	// Per-issue analysis failures (backend emits `error` SSE events with a
 	// `number`); batch-level failures (no `number`) are tracked separately.
+	const activeRepoState = activeRepoItem
+		? repoAnalysisState(activeRepoItem)
+		: null;
+
 	const [failedIssues, setFailedIssues] = useState<Record<number, string>>(
 		initialFailed.issues,
 	);
@@ -177,7 +182,7 @@ function RouteComponent() {
 			forceRef.current = false;
 			return collected;
 		},
-		enabled: !!activeRepo && issues.length > 0,
+		enabled: !!activeRepo && issues.length > 0 && activeRepoState === "ready",
 		staleTime: 1000 * 60 * 5,
 	});
 
@@ -331,6 +336,47 @@ function RouteComponent() {
 						</Link>
 					</div>
 				)
+			) : activeRepoState !== "ready" ? (
+				<div className="flex flex-col justify-center items-center gap-4 flex-1 text-center">
+					<div className="flex justify-center items-center bg-amber-500/10 border border-amber-500/20 rounded-2xl w-16 h-16">
+						<Loader2
+							size={24}
+							className="text-amber-400 animate-spin will-change-transform"
+						/>
+					</div>
+					<div>
+						<div className="mb-1 font-medium text-foreground text-base">
+							Analyzing repository…
+						</div>
+						<p className="max-w-xs text-muted-foreground text-sm leading-relaxed">
+							We're analyzing this repository's PR patterns and building a code
+							graph. Issue matching will start automatically once it's ready.
+						</p>
+					</div>
+					<div className="flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
+						<span className="flex items-center gap-1.5">
+							<span
+								className={`inline-block rounded-full w-1.5 h-1.5 ${
+									activeRepoItem?.playbook_state === "done"
+										? "bg-emerald-400"
+										: "bg-amber-400 animate-pulse"
+								}`}
+							/>
+							PR patterns
+						</span>
+						<span className="text-muted-foreground/30">·</span>
+						<span className="flex items-center gap-1.5">
+							<span
+								className={`inline-block rounded-full w-1.5 h-1.5 ${
+									activeRepoItem?.graph_state === "done"
+										? "bg-emerald-400"
+										: "bg-amber-400 animate-pulse"
+								}`}
+							/>
+							Code graph
+						</span>
+					</div>
+				</div>
 			) : (
 				<>
 					{/* Filters */}
