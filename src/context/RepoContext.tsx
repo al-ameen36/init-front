@@ -6,6 +6,7 @@ import {
 	deleteRepo as apiDeleteRepo,
 	fetchRepos,
 	type RepoItem,
+	repoAnalysisState,
 } from "@/lib/api";
 
 export type { RepoItem };
@@ -33,7 +34,12 @@ export function RepoProvider({ children }: { children: ReactNode }) {
 	const { data: repos = [], isLoading: loading } = useQuery({
 		queryKey: REPOS_KEY,
 		queryFn: fetchRepos,
-		refetchInterval: 5000,
+		refetchInterval: (query) => {
+			const data = query.state.data;
+			if (!data || data.length === 0) return false;
+			const terminal = data.every((r) => repoAnalysisState(r) !== "analyzing");
+			return terminal ? false : 5000;
+		},
 	});
 
 	const addRepo = async (url: string) => {
