@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
+import { ProfileProvider } from "@/context/ProfileContext";
 import { OnboardingView } from "@/features/onboarding/components/OnboardingView";
 
 function OnboardingPage() {
 	return (
 		<RequireAuth>
-			<OnboardingView />
+			<ProfileProvider>
+				<OnboardingView />
+			</ProfileProvider>
 		</RequireAuth>
 	);
 }

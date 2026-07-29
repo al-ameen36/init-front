@@ -1,12 +1,11 @@
 import type { Session, User } from "@supabase/supabase-js";
-import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { clearBackendSession } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
 export function useAuth() {
 	const [user, setUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
-	const navigate = useNavigate();
 
 	useEffect(() => {
 		supabase.auth.getSession().then(({ data: { session } }) => {
@@ -46,7 +45,8 @@ export function useAuth() {
 	const signOut = async () => {
 		setUser(null);
 		setLoading(false);
-		navigate({ to: "/", replace: true });
+
+		await clearBackendSession();
 
 		try {
 			const { error } = await supabase.auth.signOut();
@@ -54,6 +54,8 @@ export function useAuth() {
 		} catch (error) {
 			console.error("Sign out error:", error);
 		}
+
+		window.location.href = "/";
 	};
 
 	return {

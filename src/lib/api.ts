@@ -28,9 +28,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	});
 
 	if (!response.ok) {
-		if (response.status === 401 && typeof window !== "undefined") {
-			window.location.href = "/signin";
-		}
+		// Navigation belongs to RequireAuth. Redirecting from this low-level
+		// helper turns any unauthenticated request on a public route into a
+		// full-page reload loop.
 		throw new Error(`API ${path} failed: ${response.statusText}`);
 	}
 
@@ -70,12 +70,9 @@ export type RepoItem = {
 };
 
 export function repoAnalysisState(repo: RepoItem): string {
-	if (repo.playbook_state === "error" || repo.graph_state === "error")
-		return "error";
-	if (repo.playbook_state === "running" || repo.graph_state === "running")
-		return "analyzing";
-	if (repo.playbook_state === "done" && repo.graph_state === "done")
-		return "ready";
+	if (repo.playbook_state === "error") return "error";
+	if (repo.playbook_state === "running") return "analyzing";
+	if (repo.playbook_state === "done") return "ready";
 	return "pending";
 }
 

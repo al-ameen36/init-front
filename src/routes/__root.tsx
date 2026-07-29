@@ -5,8 +5,6 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { useEffect, useState } from "react";
 import appCss from "#/styles/index.css?url";
 import { SessionSync } from "@/components/SessionSync";
-import { ProfileProvider } from "@/context/ProfileContext";
-import { RepoProvider } from "@/context/RepoContext";
 
 function NotFound() {
 	return (
@@ -98,9 +96,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<body>
 				<QueryClientProvider client={queryClient}>
 					<SessionSync />
-					<ProfileProvider>
-						<RepoProvider>{children}</RepoProvider>
-					</ProfileProvider>
+					{children}
 				</QueryClientProvider>
 				<TanStackDevtools
 					config={{
