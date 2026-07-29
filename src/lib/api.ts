@@ -355,14 +355,14 @@ export async function syncBackendSession(accessToken: string): Promise<void> {
 		credentials: "include",
 		headers: { "content-type": "application/json" },
 		body: JSON.stringify({ access_token: accessToken }),
-	}).catch(() => {});
+	}).catch((e) => console.warn("syncBackendSession failed:", e));
 }
 
 export async function clearBackendSession(): Promise<void> {
 	await fetch(`${SERVER_URL}/auth/logout`, {
 		method: "POST",
 		credentials: "include",
-	}).catch(() => {});
+	}).catch((e) => console.warn("clearBackendSession failed:", e));
 }
 
 // ---------------------------------------------------------------------------

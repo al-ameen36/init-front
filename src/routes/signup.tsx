@@ -39,13 +39,18 @@ function RouteComponent() {
 	const navigate = useNavigate();
 	const { signInWithGitHub, loading } = useAuth();
 	const [authLoading, setAuthLoading] = useState(false);
+	const [authError, setAuthError] = useState<string | null>(null);
 
 	const handleConnect = async () => {
 		setAuthLoading(true);
+		setAuthError(null);
 		try {
 			await signInWithGitHub();
 		} catch (error) {
+			const msg =
+				error instanceof Error ? error.message : "GitHub sign-in failed";
 			console.error("GitHub auth failed:", error);
+			setAuthError(msg);
 			setAuthLoading(false);
 		}
 	};
@@ -219,6 +224,11 @@ function RouteComponent() {
 							</>
 						)}
 					</button>
+					{authError && (
+						<p className="mt-2 text-[13px] text-red-400 text-center">
+							{authError}
+						</p>
+					)}
 
 					<div className="mt-8 border border-border rounded-xl overflow-hidden">
 						<div className="flex items-center gap-2 bg-muted/20 px-4 py-3 border-border border-b">
