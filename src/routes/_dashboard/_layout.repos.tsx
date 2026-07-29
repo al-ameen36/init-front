@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	AlertTriangle,
@@ -292,6 +292,7 @@ function ConfirmDeleteModal({
 function RouteComponent() {
 	const { repos, activeRepo, addRepo, removeRepo, setActiveRepo, loading } =
 		useRepos();
+	const queryClient = useQueryClient();
 	const [showAdd, setShowAdd] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState<RepoItem | null>(null);
 	const [patternRepo, setPatternRepo] = useState<string | null>(null);
@@ -347,6 +348,7 @@ function RouteComponent() {
 				notify("success", msg);
 				es.close();
 				activeJobs.current.delete(jobId);
+				queryClient.invalidateQueries({ queryKey: ["repositories"] });
 			};
 			es.addEventListener("completed", (e) => {
 				const parsed = JSON.parse(e.data);

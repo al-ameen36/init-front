@@ -38,7 +38,7 @@ export function RepoProvider({ children }: { children: ReactNode }) {
 			const data = query.state.data;
 			if (!data || data.length === 0) return false;
 			const terminal = data.every((r) => repoAnalysisState(r) !== "analyzing");
-			return terminal ? false : 5000;
+			return terminal ? false : 15000;
 		},
 	});
 
