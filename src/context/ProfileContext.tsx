@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 import type { DeveloperProfile } from "@/features/onboarding/components/data";
-import { fetchProfile, saveProfile } from "@/lib/api";
+import { fetchProfile } from "@/lib/api";
 
 type ProfileContextValue = {
 	profile: DeveloperProfile | null;
@@ -36,9 +36,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
 	const setProfile = (next: DeveloperProfile) => {
 		setProfileState(next);
-		saveProfile(next).catch((err) =>
-			console.warn("Failed to persist profile:", err),
-		);
 	};
 
 	const clearProfile = () => {

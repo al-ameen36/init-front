@@ -112,16 +112,6 @@ export function fetchProfile(): Promise<DeveloperProfile | null> {
 	return request<DeveloperProfile | null>("/profile");
 }
 
-export function saveProfile(
-	profile: DeveloperProfile,
-): Promise<Record<string, string>> {
-	return request<Record<string, string>>("/profile", {
-		method: "PUT",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify(profile),
-	});
-}
-
 export type AnalyzeStreamEvent =
 	| { type: "status"; stage: string; message: string }
 	| { type: "result"; analysis: AnalyzeIssueResponse }

@@ -132,7 +132,7 @@ function RepoCard({
 								{meta.language}
 							</span>
 						)}
-						{meta && (
+						{meta && typeof meta.stars === "number" && (
 							<span className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
 								<Star size={9} />
 								{meta.stars.toLocaleString()}
@@ -172,7 +172,7 @@ function RepoCard({
 						label: "Open issues",
 						value: meta ? meta.open_issues_count : "—",
 					},
-					{ label: "Stars", value: meta ? meta.stars.toLocaleString() : "—" },
+					{ label: "Stars", value: meta && typeof meta.stars === "number" ? meta.stars.toLocaleString() : "—" },
 					{
 						label: "Language",
 						value: meta?.language ?? "—",
