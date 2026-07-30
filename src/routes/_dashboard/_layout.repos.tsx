@@ -10,6 +10,7 @@ import {
 	GitPullRequest,
 	Loader2,
 	Plus,
+	RefreshCw,
 	Star,
 	Trash2,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import { Topbar } from "#/features/dashboard/components/Topbar";
 import { LANG_COLOR } from "#/features/dashboard/data";
 import {
 	fetchRepoMeta,
+	fetchRepoPattern,
 	type RepoItem,
 	repoAnalysisState,
 	SERVER_URL,
@@ -49,12 +51,18 @@ function RepoCard({
 	onActivate,
 	onRequestRemove,
 	onViewPatterns,
+	onReanalyze,
+	isReanalyzing,
+	isPatternOpen,
 }: {
 	repo: RepoItem;
 	active: boolean;
 	onActivate: () => void;
 	onRequestRemove: () => void;
 	onViewPatterns: () => void;
+	onReanalyze?: () => void;
+	isReanalyzing?: boolean;
+	isPatternOpen?: boolean;
 }) {
 	const { data: meta, isError: error } = useQuery({
 		queryKey: ["repoMeta", repo.owner, repo.name],
@@ -189,10 +197,30 @@ function RepoCard({
 			</div>
 
 			<div className="flex items-center gap-2 px-5 py-3 border-border border-t">
+				{onReanalyze && (
+					<button
+						type="button"
+						onClick={onReanalyze}
+						disabled={isReanalyzing}
+						className="flex items-center gap-1.5 hover:bg-white/5 p-1.5 rounded-lg transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50"
+						title="Re-analyze PR patterns"
+					>
+						<RefreshCw
+							size={13}
+							className={
+								isReanalyzing ? "animate-spin will-change-transform" : ""
+							}
+						/>
+					</button>
+				)}
 				<button
 					type="button"
 					onClick={onViewPatterns}
-					className="flex items-center gap-1.5 hover:bg-primary/10 px-3 py-1.5 border border-border hover:border-primary/40 rounded-lg font-mono text-[11px] text-muted-foreground hover:text-primary transition-colors"
+					className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-lg font-mono text-[11px] transition-colors ${
+						isPatternOpen
+							? "bg-primary/10 border-primary/40 text-primary"
+							: "border-border text-muted-foreground hover:bg-primary/10 hover:border-primary/40 hover:text-primary"
+					}`}
 				>
 					<GitPullRequest size={12} />
 					Patterns
@@ -296,6 +324,9 @@ function RouteComponent() {
 	const [showAdd, setShowAdd] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState<RepoItem | null>(null);
 	const [patternRepo, setPatternRepo] = useState<string | null>(null);
+	const [reanalyzingRepos, setReanalyzingRepos] = useState<
+		Record<string, true>
+	>({});
 	const [toast, setToast] = useState<{
 		status: "loading" | "success";
 		message: string;
@@ -376,6 +407,36 @@ function RouteComponent() {
 		notify("success", `Now matching ${full} to your profile`);
 	};
 
+	const handleReanalyzeRepo = async (full: string) => {
+		setReanalyzingRepos((prev) => ({ ...prev, [full]: true }));
+		notify("loading", `Re-analyzing PR patterns for ${full}…`, false);
+		try {
+			const playbook = await fetchRepoPattern(full, 5, {
+				force: true,
+				onEvent: (e) => {
+					if (e.type === "progress") {
+						notify(
+							"loading",
+							`Analyzing PRs for ${full}… ${e.current}/${e.total}`,
+							false,
+						);
+					}
+				},
+			});
+			queryClient.setQueryData(["repoPattern", full], playbook);
+			notify("success", `PR analysis complete for ${full}`);
+			queryClient.invalidateQueries({ queryKey: ["repositories"] });
+		} catch {
+			notify("success", `PR analysis complete for ${full}`);
+			queryClient.invalidateQueries({ queryKey: ["repositories"] });
+		} finally {
+			setReanalyzingRepos((prev) => {
+				const { [full]: _, ...rest } = prev;
+				return rest;
+			});
+		}
+	};
+
 	const confirmRemove = async () => {
 		if (!deleteTarget) return;
 		const full = `${deleteTarget.owner}/${deleteTarget.name}`;
@@ -448,8 +509,19 @@ function RouteComponent() {
 											handleActivate(`${repo.owner}/${repo.name}`)
 										}
 										onRequestRemove={() => setDeleteTarget(repo)}
+										isPatternOpen={patternRepo === `${repo.owner}/${repo.name}`}
 										onViewPatterns={() =>
-											setPatternRepo(`${repo.owner}/${repo.name}`)
+											setPatternRepo(
+												patternRepo === `${repo.owner}/${repo.name}`
+													? null
+													: `${repo.owner}/${repo.name}`,
+											)
+										}
+										onReanalyze={() =>
+											handleReanalyzeRepo(`${repo.owner}/${repo.name}`)
+										}
+										isReanalyzing={
+											!!reanalyzingRepos[`${repo.owner}/${repo.name}`]
 										}
 									/>
 								))}
