@@ -67,6 +67,9 @@ function RouteComponent() {
 		initialFailed.issues,
 	);
 	const [batchError, setBatchError] = useState(initialFailed.batch);
+	const [refreshingSingle, setRefreshingSingle] = useState<
+		Record<number, true>
+	>({});
 
 	// Active issues (bookmarked by the user).
 	const { data: activeIssues = [] } = useQuery({
@@ -243,6 +246,59 @@ function RouteComponent() {
 				queryKey: ["analyze-batch", activeRepo, profileKey],
 			});
 			queryClient.setQueryData(failedKey, { issues: {}, batch: false });
+		}
+	};
+
+	const handleSingleRefresh = async (issueNumber: number) => {
+		if (!activeRepo) return;
+		setRefreshingSingle((prev) => ({ ...prev, [issueNumber]: true }));
+		try {
+			await analyzeIssuesStream(activeRepo, [issueNumber], profile, {
+				force: true,
+				onEvent: (e) => {
+					if (e.type === "result") {
+						const num = e.analysis.number;
+						queryClient.setQueryData<AnalyzeBatch>(analyzeKey, (prev) => ({
+							...(prev ?? {}),
+							[num]: e.analysis,
+						}));
+						setFailedIssues((prev) => {
+							const { [num as number]: _, ...rest } = prev;
+							queryClient.setQueryData<FailedState>(failedKey, (cur) => ({
+								issues: rest,
+								batch: cur?.batch ?? false,
+							}));
+							return rest;
+						});
+					} else if (e.type === "error" && typeof e.number === "number") {
+						setFailedIssues((prev) => {
+							const next = {
+								...prev,
+								[e.number as number]: e.message,
+							};
+							queryClient.setQueryData<FailedState>(failedKey, (cur) => ({
+								issues: next,
+								batch: cur?.batch ?? false,
+							}));
+							return next;
+						});
+					}
+				},
+			});
+		} catch (err) {
+			setFailedIssues((prev) => {
+				const next = { ...prev, [issueNumber]: String(err) };
+				queryClient.setQueryData<FailedState>(failedKey, (cur) => ({
+					issues: next,
+					batch: cur?.batch ?? false,
+				}));
+				return next;
+			});
+		} finally {
+			setRefreshingSingle((prev) => {
+				const { [issueNumber as number]: _, ...rest } = prev;
+				return rest;
+			});
 		}
 	};
 
@@ -494,6 +550,8 @@ function RouteComponent() {
 												issue={issue}
 												isSelected={selectedId === issue.number}
 												onClick={() => handleAnalyze(issue.number)}
+												onRefresh={handleSingleRefresh}
+												isRefreshing={!!refreshingSingle[issue.number]}
 												onToggleActive={() =>
 													handleToggleActive(
 														issue.repo ?? (activeRepo as string),
@@ -536,7 +594,7 @@ function RouteComponent() {
 											}
 											isAnalyzing={isAnalyzingSelected}
 											onClose={() => setSelectedId(null)}
-											onRetry={handleRefresh}
+											onRetry={() => handleSingleRefresh(selectedId)}
 											onToggleActive={() => {
 												const sel = displayIssues.find(
 													(i) => i.number === selectedId,

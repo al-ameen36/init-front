@@ -3,6 +3,7 @@ import {
 	Clock,
 	ExternalLink,
 	MessageSquare,
+	RefreshCw,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { DifficultyBadge } from "../../../components/DifficultyBadge";
@@ -15,12 +16,16 @@ export function IssueCard({
 	isSelected,
 	onClick,
 	onToggleActive,
+	onRefresh,
+	isRefreshing,
 	mergedPr,
 }: {
 	issue: Issue;
 	isSelected: boolean;
 	onClick: () => void;
 	onToggleActive?: () => void;
+	onRefresh?: (issueNumber: number) => void;
+	isRefreshing?: boolean;
 	mergedPr?: {
 		merged: boolean;
 		pr_number: number | null;
@@ -65,17 +70,34 @@ export function IssueCard({
 							</span>
 						)}
 					</div>
-					<div className="pr-6 font-medium text-foreground group-hover:text-white text-sm leading-snug transition-colors">
+					<div className="font-medium text-foreground group-hover:text-white text-sm leading-snug transition-colors">
 						{issue.title}
 					</div>
 				</div>
-				{onToggleActive && (
-					<BookmarkButton
-						isActive={!!issue.isActive}
-						onClick={onToggleActive}
-						className="absolute top-3 right-3"
-					/>
-				)}
+				<div className="flex items-center gap-0.5 shrink-0 pt-1">
+					{onRefresh && (
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								onRefresh(issue.number);
+							}}
+							className="hover:bg-white/5 p-1.5 rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+							title="Re-analyze this issue"
+						>
+							<RefreshCw
+								size={12}
+								className={isRefreshing ? "animate-spin" : ""}
+							/>
+						</button>
+					)}
+					{onToggleActive && (
+						<BookmarkButton
+							isActive={!!issue.isActive}
+							onClick={onToggleActive}
+						/>
+					)}
+				</div>
 			</div>
 			<div className="flex flex-wrap items-center gap-1.5">
 				{mergedPr?.merged && mergedPr.pr_url ? (
