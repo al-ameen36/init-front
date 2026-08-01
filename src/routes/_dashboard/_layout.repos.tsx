@@ -172,7 +172,13 @@ function RepoCard({
 						label: "Open issues",
 						value: meta ? meta.open_issues_count : "—",
 					},
-					{ label: "Stars", value: meta && typeof meta.stars === "number" ? meta.stars.toLocaleString() : "—" },
+					{
+						label: "Stars",
+						value:
+							meta && typeof meta.stars === "number"
+								? meta.stars.toLocaleString()
+								: "—",
+					},
 					{
 						label: "Language",
 						value: meta?.language ?? "—",

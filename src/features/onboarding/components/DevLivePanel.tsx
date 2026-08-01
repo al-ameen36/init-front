@@ -9,8 +9,7 @@ import {
 	Star,
 } from "lucide-react";
 import { motion } from "motion/react";
-import type { DeveloperProfile } from "@/hooks/useOnboardingAnalysis";
-import type { Phase } from "./data";
+import type { DeveloperProfile, Phase } from "./data";
 import { useCountUp } from "./helpers";
 
 export function DevLivePanel({

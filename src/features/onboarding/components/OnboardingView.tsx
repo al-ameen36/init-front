@@ -1,8 +1,9 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useProfile } from "@/context/ProfileContext";
+import { AnalysisSteps } from "@/features/onboarding/components/AnalysisSteps";
 import { DevLivePanel } from "@/features/onboarding/components/DevLivePanel";
 import type { Phase } from "@/features/onboarding/components/data";
 import { useOnboardingAnalysis } from "@/hooks/useOnboardingAnalysis";
@@ -82,86 +83,7 @@ export function OnboardingView() {
 								<div className="mb-5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 									Analysis steps
 								</div>
-								{[
-									{
-										id: "connect",
-										label: "Connecting to GitHub",
-										done: displayPhase >= 1,
-										active: displayPhase === 0,
-									},
-									{
-										id: "repos",
-										label: "Fetching repositories",
-										done: displayPhase >= 2,
-										active: displayPhase === 1,
-									},
-									{
-										id: "languages",
-										label: "Analyzing languages",
-										done: displayPhase >= 3,
-										active: displayPhase === 2,
-									},
-									{
-										id: "tools",
-										label: "Analyzing tools",
-										done: displayPhase >= 4,
-										active: displayPhase === 3,
-									},
-									{
-										id: "history",
-										label: "Reading contribution history",
-										done: displayPhase >= 5,
-										active: displayPhase === 4,
-									},
-									{
-										id: "profile",
-										label: "Completing profile",
-										done: displayPhase >= 6,
-										active: displayPhase === 5,
-									},
-								].map((p) => (
-									<div key={p.id} className="flex items-start gap-3 py-2">
-										<div
-											className="relative flex flex-col items-center shrink-0"
-											style={{ marginTop: 2 }}
-										>
-											<div
-												className="flex justify-center items-center border-2 rounded-full w-5 h-5 transition-all duration-500"
-												style={{
-													borderColor:
-														p.done || p.active
-															? accentColor
-															: "rgba(255,255,255,0.1)",
-													backgroundColor: p.done ? accentColor : "transparent",
-												}}
-											>
-												{p.done ? (
-													<CheckCircle2 size={11} className="text-background" />
-												) : (
-													<Loader2
-														size={11}
-														style={{ color: accentColor }}
-														className="animate-spin will-change-transform"
-													/>
-												)}
-											</div>
-										</div>
-										<div className="pb-4">
-											<div
-												className="font-medium text-sm transition-colors duration-300"
-												style={{
-													color: p.active
-														? "#e8edf8"
-														: p.done
-															? "#6b7a9d"
-															: "#3a4a6a",
-												}}
-											>
-												{p.label}
-											</div>
-										</div>
-									</div>
-								))}
+								<AnalysisSteps displayPhase={displayPhase} />
 								{displayPhase >= 6 && (
 									<div className="pt-4">
 										<motion.button

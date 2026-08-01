@@ -5,9 +5,11 @@ import {
 	Code2,
 	Flame,
 	GitPullRequest,
+	RefreshCw,
 	TrendingUp,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useState } from "react";
 import {
 	PolarAngleAxis,
 	PolarGrid,
@@ -16,6 +18,7 @@ import {
 	ResponsiveContainer,
 	Tooltip,
 } from "recharts";
+import { ReanalyzeModal } from "#/features/dashboard/components/ReanalyzeModal";
 import { Topbar } from "#/features/dashboard/components/Topbar";
 import { useProfile } from "@/context/ProfileContext";
 import { fetchGithubStats } from "@/lib/api";
@@ -26,6 +29,7 @@ export const Route = createFileRoute("/_dashboard/_layout/skills")({
 
 function RouteComponent() {
 	const { profile } = useProfile();
+	const [reanalyzing, setReanalyzing] = useState(false);
 
 	const username = profile?.username;
 
@@ -68,7 +72,19 @@ function RouteComponent() {
 
 	return (
 		<div className="flex flex-col h-full">
-			<Topbar title="Skill Profile" subtitle={subtitle} />
+			<Topbar title="Skill Profile" subtitle={subtitle}>
+				{username && (
+					<button
+						type="button"
+						onClick={() => setReanalyzing(true)}
+						disabled={reanalyzing}
+						className="flex items-center gap-1.5 px-3 py-1.5 border border-border/60 hover:border-white/12 rounded-lg font-mono text-[11px] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+					>
+						<RefreshCw size={11} />
+						Re-analyze
+					</button>
+				)}
+			</Topbar>
 			<div className="flex-1 px-7 py-6 overflow-y-auto scrollbar-hide">
 				<div className="gap-6 grid grid-cols-1 lg:grid-cols-[1fr_300px] max-w-4xl">
 					<div className="bg-card p-6 border border-border rounded-xl">
@@ -241,6 +257,15 @@ function RouteComponent() {
 					</div>
 				</div>
 			</div>
+
+			<AnimatePresence>
+				{reanalyzing && username && (
+					<ReanalyzeModal
+						username={username}
+						onClose={() => setReanalyzing(false)}
+					/>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }
