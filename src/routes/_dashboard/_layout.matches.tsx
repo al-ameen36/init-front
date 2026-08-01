@@ -1,14 +1,6 @@
 import { useIsFetching, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-	ChevronDown,
-	Filter,
-	GitBranch,
-	Loader2,
-	RefreshCw,
-	Search,
-	SlidersHorizontal,
-} from "lucide-react";
+import { Filter, GitBranch, Loader2, RefreshCw, Search } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { DetailPanel } from "#/features/dashboard/components/DetailPanel";
@@ -20,14 +12,13 @@ import type { ActiveIssue } from "#/lib/api";
 import {
 	analyzeIssuesStream,
 	fetchActiveIssues,
+	fetchIssueFilters,
 	fetchIssues,
 	repoAnalysisState,
 	toggleActiveIssue,
 } from "#/lib/api";
 import { useProfile } from "@/context/ProfileContext";
 import { useRepos } from "@/context/RepoContext";
-
-const SORT_OPTIONS = ["Best match", "Newest", "Most active"];
 
 type AnalyzeBatch = Record<number, AnalyzeIssueResponse>;
 
@@ -50,8 +41,6 @@ function RouteComponent() {
 	};
 	const [selectedId, setSelectedId] = useState<number | null>(null);
 	const [diffFilter, setDiffFilter] = useState("All");
-	const [sort, setSort] = useState("Best match");
-	const [showSort, setShowSort] = useState(false);
 	const [search, setSearch] = useState("");
 	const forceRef = useRef(false);
 	const [buildStatus, setBuildStatus] = useState<string | null | undefined>(
@@ -112,6 +101,14 @@ function RouteComponent() {
 	});
 
 	const issues = issuesData?.issues ?? [];
+
+	// Sort preference lives in the persisted issue filters (shared query with
+	// the filter popover); sorting itself is client-side over the analysis.
+	const { data: issueFilters } = useQuery({
+		queryKey: ["issue-filters"],
+		queryFn: fetchIssueFilters,
+	});
+	const sort = issueFilters?.sort ?? "Best match";
 
 	// Key the analysis batch on the exact issue list so it re-runs whenever the
 	// list changes (e.g. the user edits their label filters). Results from the
@@ -497,43 +494,6 @@ function RouteComponent() {
 
 						<div className="relative ml-auto">
 							<IssueFilterPopover repo={activeRepo as string} />
-						</div>
-
-						<div className="relative">
-							<button
-								type="button"
-								onClick={() => setShowSort((p) => !p)}
-								className="flex items-center gap-1.5 px-3 py-1.5 border border-border/60 hover:border-white/12 rounded-lg font-mono text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-							>
-								<SlidersHorizontal size={11} />
-								{sort}
-								<ChevronDown size={11} />
-							</button>
-							<AnimatePresence>
-								{showSort && (
-									<motion.div
-										initial={{ opacity: 0, y: -4 }}
-										animate={{ opacity: 1, y: 0 }}
-										exit={{ opacity: 0, y: -4 }}
-										transition={{ duration: 0.15 }}
-										className="top-full right-0 z-50 absolute bg-popover shadow-2xl shadow-black/50 mt-1 py-1.5 border border-border rounded-xl w-36"
-									>
-										{SORT_OPTIONS.map((o) => (
-											<button
-												key={o}
-												type="button"
-												onClick={() => {
-													setSort(o);
-													setShowSort(false);
-												}}
-												className={`w-full text-left font-mono text-[11px] px-3 py-2 transition-colors ${sort === o ? "text-primary bg-primary/8" : "text-muted-foreground hover:text-foreground hover:bg-white/4"}`}
-											>
-												{o}
-											</button>
-										))}
-									</motion.div>
-								)}
-							</AnimatePresence>
 						</div>
 					</div>
 

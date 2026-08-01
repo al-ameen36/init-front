@@ -43,17 +43,21 @@ export function fetchIssues(repo: string): Promise<IssuesResponse> {
 
 export type IssueFilters = {
 	exclude_labels: string[];
+	exclude_linked_prs: boolean;
+	sort: string;
 };
 
 export function fetchIssueFilters(): Promise<IssueFilters> {
 	return request<IssueFilters>("/issues/filters");
 }
 
-export function updateIssueFilters(labels: string[]): Promise<IssueFilters> {
+export function updateIssueFilters(
+	filters: IssueFilters,
+): Promise<IssueFilters> {
 	return request<IssueFilters>("/issues/filters", {
 		method: "PUT",
 		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ exclude_labels: labels }),
+		body: JSON.stringify(filters),
 	});
 }
 
