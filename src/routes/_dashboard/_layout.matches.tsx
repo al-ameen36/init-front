@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { DetailPanel } from "#/features/dashboard/components/DetailPanel";
 import { IssueCard } from "#/features/dashboard/components/IssueCard";
 import { IssueFilterPopover } from "#/features/dashboard/components/IssueFilterPopover";
+import { RepoSelect } from "#/features/dashboard/components/RepoSelect";
 import { Topbar } from "#/features/dashboard/components/Topbar";
 import type { AnalyzeIssueResponse, Issue } from "#/features/dashboard/types";
 import type { ActiveIssue } from "#/lib/api";
@@ -471,11 +472,7 @@ function RouteComponent() {
 							/>
 						</div>
 
-						{/* Active repo indicator — the page is scoped to one repo,
-						    so this is just a label, not a clickable filter. */}
-						<span className="font-mono text-[11px] px-2.5 py-1.5 rounded-md bg-primary/15 text-primary">
-							{activeRepo}
-						</span>
+						<RepoSelect />
 
 						{["All", "Low", "Medium", "High"].map((d) => (
 							<button
