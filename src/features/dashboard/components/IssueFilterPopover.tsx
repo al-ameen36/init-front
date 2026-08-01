@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Filter, Loader2, Plus, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { IssueFilters } from "#/lib/api";
 import { fetchIssueFilters, updateIssueFilters } from "#/lib/api";
 
 export function IssueFilterPopover({ repo }: { repo: string }) {
@@ -13,15 +14,44 @@ export function IssueFilterPopover({ repo }: { repo: string }) {
 	const [open, setOpen] = useState(false);
 	const [input, setInput] = useState("");
 	const [saving, setSaving] = useState(false);
+	const rootRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!open) return;
+		const onPointerDown = (event: PointerEvent) => {
+			if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+				setOpen(false);
+			}
+		};
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.key === "Escape") setOpen(false);
+		};
+		document.addEventListener("pointerdown", onPointerDown);
+		document.addEventListener("keydown", onKeyDown);
+		return () => {
+			document.removeEventListener("pointerdown", onPointerDown);
+			document.removeEventListener("keydown", onKeyDown);
+		};
+	}, [open]);
 
 	const labels = data?.exclude_labels ?? [];
 
 	const save = async (next: string[]) => {
 		setSaving(true);
+		// Apply optimistically so the UI updates immediately instead of waiting
+		// for the round trip. The issues list is only refreshed once the backend
+		// confirms, because filtering happens server-side.
+		const prev =
+			queryClient.getQueryData<IssueFilters>(["issue-filters"])
+				?.exclude_labels ?? [];
+		queryClient.setQueryData(["issue-filters"], { exclude_labels: next });
 		try {
 			const saved = await updateIssueFilters(next);
 			queryClient.setQueryData(["issue-filters"], saved);
 			void queryClient.invalidateQueries({ queryKey: ["issues", repo] });
+		} catch (err) {
+			console.error("Failed to save issue filters:", err);
+			queryClient.setQueryData(["issue-filters"], { exclude_labels: prev });
 		} finally {
 			setSaving(false);
 		}
@@ -41,7 +71,7 @@ export function IssueFilterPopover({ repo }: { repo: string }) {
 	};
 
 	return (
-		<div className="relative">
+		<div className="relative" ref={rootRef}>
 			<button
 				type="button"
 				onClick={() => setOpen((p) => !p)}

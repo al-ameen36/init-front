@@ -40,7 +40,6 @@ function RouteComponent() {
 	const { activeRepo, activeRepoItem, loading: reposLoading } = useRepos();
 	const queryClient = useQueryClient();
 	const profileKey = profile?.username ?? "anon";
-	const analyzeKey = ["analyze-batch", activeRepo, profileKey] as const;
 	const failedKey = ["analyze-failed", activeRepo, profileKey] as const;
 	type FailedState = { issues: Record<number, string>; batch: boolean };
 	// Re-hydrate failure state from the cache so it survives navigating away
@@ -114,6 +113,21 @@ function RouteComponent() {
 
 	const issues = issuesData?.issues ?? [];
 
+	// Key the analysis batch on the exact issue list so it re-runs whenever the
+	// list changes (e.g. the user edits their label filters). Results from the
+	// previous batch are carried over, so only issues without analysis get sent
+	// to the stream — the rest keep their already-computed results.
+	const issueKey = issues
+		.map((i) => i.number)
+		.sort((a, b) => a - b)
+		.join(",");
+	const analyzeKey = [
+		"analyze-batch",
+		activeRepo,
+		profileKey,
+		issueKey,
+	] as const;
+
 	// One streaming analysis pass for the whole page, cached by repo + profile.
 	// Each issue's result is painted the moment it finishes (SSE), so the user
 	// never waits for the full batch. Results are written into React Query's
@@ -131,57 +145,69 @@ function RouteComponent() {
 			// hit (e.g. returning to the page) keeps showing prior results.
 			if (forceRef.current) {
 				queryClient.setQueryData<AnalyzeBatch>(analyzeKey, {});
+			} else {
+				// Carry over results from any previous batch for this repo+profile
+				// so issues keep their analysis when the list changes, and only
+				// issues that still lack it are sent to the analysis stream.
+				for (const [, prior] of queryClient.getQueriesData<AnalyzeBatch>({
+					queryKey: ["analyze-batch", activeRepo, profileKey],
+				})) {
+					if (prior) Object.assign(collected, prior);
+				}
+				queryClient.setQueryData<AnalyzeBatch>(analyzeKey, collected);
 			}
 			setBuildStatus(null);
 			const resetFailed: FailedState = { issues: {}, batch: false };
 			setFailedIssues({});
 			setBatchError(false);
 			queryClient.setQueryData(failedKey, resetFailed);
-			await analyzeIssuesStream(
-				activeRepo as string,
-				issues.map((i) => i.number),
-				profile,
-				{
-					force: forceRef.current,
-					onEvent: (e) => {
-						if (e.type === "status") {
-							setBuildStatus(e.message);
-						} else if (e.type === "result") {
-							setBuildStatus(null);
-							collected[e.analysis.number] = e.analysis;
-							queryClient.setQueryData<AnalyzeBatch>(analyzeKey, (prev) => ({
-								...(prev ?? {}),
-								[e.analysis.number]: e.analysis,
-							}));
-						} else if (e.type === "error") {
-							// Backend streams `error` events then ends the stream;
-							// surface each so the UI can show "Analysis failed".
-							// Persist to the query cache so the state survives
-							// navigating away and back.
-							setBuildStatus(e.message);
-							if (typeof e.number === "number") {
-								setFailedIssues((prev) => {
-									const next = {
-										...prev,
-										[e.number as number]: e.message,
-									};
-									queryClient.setQueryData<FailedState>(failedKey, (cur) => ({
-										issues: next,
-										batch: cur?.batch ?? false,
-									}));
-									return next;
-								});
-							} else {
-								setBatchError(true);
+			const toAnalyze = issues
+				.map((i) => i.number)
+				.filter((n) => !(n in collected));
+			if (toAnalyze.length === 0) {
+				forceRef.current = false;
+				return collected;
+			}
+			await analyzeIssuesStream(activeRepo as string, toAnalyze, profile, {
+				force: forceRef.current,
+				onEvent: (e) => {
+					if (e.type === "status") {
+						setBuildStatus(e.message);
+					} else if (e.type === "result") {
+						setBuildStatus(null);
+						collected[e.analysis.number] = e.analysis;
+						queryClient.setQueryData<AnalyzeBatch>(analyzeKey, (prev) => ({
+							...(prev ?? {}),
+							[e.analysis.number]: e.analysis,
+						}));
+					} else if (e.type === "error") {
+						// Backend streams `error` events then ends the stream;
+						// surface each so the UI can show "Analysis failed".
+						// Persist to the query cache so the state survives
+						// navigating away and back.
+						setBuildStatus(e.message);
+						if (typeof e.number === "number") {
+							setFailedIssues((prev) => {
+								const next = {
+									...prev,
+									[e.number as number]: e.message,
+								};
 								queryClient.setQueryData<FailedState>(failedKey, (cur) => ({
-									issues: cur?.issues ?? {},
-									batch: true,
+									issues: next,
+									batch: cur?.batch ?? false,
 								}));
-							}
+								return next;
+							});
+						} else {
+							setBatchError(true);
+							queryClient.setQueryData<FailedState>(failedKey, (cur) => ({
+								issues: cur?.issues ?? {},
+								batch: true,
+							}));
 						}
-					},
+					}
 				},
-			);
+			});
 			setBuildStatus(null);
 			forceRef.current = false;
 			return collected;
