@@ -13,6 +13,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { DetailPanel } from "#/features/dashboard/components/DetailPanel";
 import { IssueCard } from "#/features/dashboard/components/IssueCard";
+import { IssueFilterPopover } from "#/features/dashboard/components/IssueFilterPopover";
 import { Topbar } from "#/features/dashboard/components/Topbar";
 import type { AnalyzeIssueResponse, Issue } from "#/features/dashboard/types";
 import type { ActiveIssue } from "#/lib/api";
@@ -469,6 +470,10 @@ function RouteComponent() {
 						))}
 
 						<div className="relative ml-auto">
+							<IssueFilterPopover repo={activeRepo as string} />
+						</div>
+
+						<div className="relative">
 							<button
 								type="button"
 								onClick={() => setShowSort((p) => !p)}

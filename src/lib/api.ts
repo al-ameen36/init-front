@@ -41,6 +41,22 @@ export function fetchIssues(repo: string): Promise<IssuesResponse> {
 	return request<IssuesResponse>(`/issues/${repo}`);
 }
 
+export type IssueFilters = {
+	exclude_labels: string[];
+};
+
+export function fetchIssueFilters(): Promise<IssueFilters> {
+	return request<IssueFilters>("/issues/filters");
+}
+
+export function updateIssueFilters(labels: string[]): Promise<IssueFilters> {
+	return request<IssueFilters>("/issues/filters", {
+		method: "PUT",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ exclude_labels: labels }),
+	});
+}
+
 export type RepoMeta = {
 	owner: string;
 	name: string;
