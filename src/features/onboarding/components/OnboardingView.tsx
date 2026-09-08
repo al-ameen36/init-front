@@ -47,7 +47,7 @@ export function OnboardingView() {
 
 	return (
 		<div
-			className="flex flex-col bg-background min-h-screen text-foreground"
+			className="flex flex-col bg-background h-screen overflow-hidden text-foreground"
 			style={{ fontFamily: "'Geist', sans-serif" }}
 		>
 			<div className="bg-border h-0.5">
@@ -68,7 +68,7 @@ export function OnboardingView() {
 				</div>
 			</div>
 
-			<div className="flex flex-1 justify-center items-start px-6 py-12 overflow-y-auto scrollbar-hide">
+			<div className="flex flex-1 justify-center items-start min-h-0 px-6 py-12 overflow-y-auto">
 				<div className="w-full max-w-4xl">
 					<AnimatePresence mode="wait">
 						<motion.div
@@ -79,7 +79,7 @@ export function OnboardingView() {
 							className="gap-8 grid grid-cols-1 lg:grid-cols-[280px_1fr]"
 						>
 							{/* Left section */}
-							<div className="space-y-1">
+							<div className="sticky top-0 space-y-1 self-start">
 								<div className="mb-5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 									Analysis steps
 								</div>
@@ -108,12 +108,10 @@ export function OnboardingView() {
 										{error}
 									</div>
 								) : (
-									<div className="max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-hide">
-										<DevLivePanel
-											phase={panelPhase}
-											analysis={profile ?? undefined}
-										/>
-									</div>
+									<DevLivePanel
+										phase={panelPhase}
+										analysis={profile ?? undefined}
+									/>
 								)}
 							</div>
 						</motion.div>
